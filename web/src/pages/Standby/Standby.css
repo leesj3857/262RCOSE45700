@@ -8,23 +8,16 @@
     background: #ffffff;
 }
 
-.standby-header p {
-    margin: 0 0 6px;
-    color: #6b7280;
-    font-size: 14px;
-}
 
-.standby-header h1 {
+
+.standby-summary {
     margin: 0;
     font-size: 26px;
     line-height: 1.3;
-}
-
-.standby-summary {
-    margin-top: 24px;
     padding: 16px;
     border-radius: 12px;
     background: #f3f4f6;
+    text-align: center;
 }
 
 .standby-summary p {
