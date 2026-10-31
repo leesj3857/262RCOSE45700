@@ -1,0 +1,101 @@
+.record-page {
+  min-height: 100vh;
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+}
+
+.record-status {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.record-time {
+  margin: 0;
+  font-size: 48px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.record-label {
+  margin: 0;
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.record-wave {
+  margin-top: 32px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.record-wave span {
+  width: 10px;
+  height: 100%;
+  border-radius: 5px;
+  background: #ef4444;
+  animation: wave 1s ease-in-out infinite;
+}
+
+.record-wave span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.record-wave span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.record-wave span:nth-child(4) {
+  animation-delay: 0.45s;
+}
+
+.record-wave span:nth-child(5) {
+  animation-delay: 0.6s;
+}
+
+@keyframes wave {
+
+  0%,
+  100% {
+    transform: scaleY(0.25);
+  }
+
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.record-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.finish-button {
+  height: 56px;
+  border: none;
+  border-radius: 12px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cancel-button {
+  height: 48px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 16px;
+  cursor: pointer;
+}
