@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { mockReview } from "../../mockData/reviewData";
 import "./Review.css";
+import ClipPlayer from "./ClipPlayer";
 
 
 // 필드 키를 화면용 한글 이름으로 바꾸는 사전
@@ -11,41 +12,11 @@ const FIELD_LABELS = {
     weather: "날씨",
 };
 
-export default function Review({ audioUrl, onBack }) {
+export default function Review({ audioClips, onAdd, onBack }) {
+
     const [review] = useState(mockReview);
-    const [playing, setPlaying] = useState(false);
-    const audioRef = useRef(null); // 실제 오디오 객체를 보관 (화면을 다시 그리지 않고 값만 유지)
 
 
-    // audioUrl이 생기면 Audio 객체를 만들고, 재생이 끝나면 상태를 되돌림
-    useEffect(() => {
-        if (!audioUrl) return;
-
-        const audio = new Audio(audioUrl);
-        audio.onended = () => setPlaying(false);
-        audioRef.current = audio;
-
-        // 화면이 사라지면 재생을 멈춤
-        return () => {
-            audio.pause();
-            audioRef.current = null;
-        };
-    }, [audioUrl]);
-
-    // 재생 버튼 클릭 시 재생/정지 토글
-    function handlePlay() {
-        const audio = audioRef.current;
-        if (!audio) return;
-
-        if (playing) {
-            audio.pause();
-            audio.currentTime = 0;
-            setPlaying(false);
-        } else {
-            audio.play();
-            setPlaying(true);
-        }
-    }
 
 
     return (
@@ -58,14 +29,9 @@ export default function Review({ audioUrl, onBack }) {
             {/* 1. 녹음 내용 재생 */}
             <section className="review-section">
                 <h2>녹음 내용</h2>
-                <button
-                    type="button"
-                    className="play-button"
-                    onClick={handlePlay}
-                    disabled={!audioUrl}
-                >
-                    {playing ? "■ 정지" : "▶ 재생"}
-                </button>
+                {audioClips.map((clip) => (
+                    <ClipPlayer key={clip.url} url={clip.url} label={clip.label} />
+                ))}
 
             </section>
 
@@ -88,9 +54,12 @@ export default function Review({ audioUrl, onBack }) {
                 ))}
             </section>
 
-            {/* 4. 뒤로가기 버튼 */}
+            {/* 4. 추가녹음 , 뒤로가기 버튼 */}
 
             <section className="review-actions">
+                <button type="button" className="add-button" onClick={onAdd}>
+                    추가녹음
+                </button>
                 <button type="button" className="back-button" onClick={onBack}>
                     뒤로가기
                 </button>

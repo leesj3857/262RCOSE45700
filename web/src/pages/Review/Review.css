@@ -79,6 +79,17 @@
     gap: 12px;
 }
 
+.add-button {
+    height: 56px;
+    border: none;
+    border-radius: 12px;
+    background: #059c53;
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
 .back-button {
     height: 56px;
     border: none;
@@ -88,4 +99,11 @@
     font-size: 18px;
     font-weight: 700;
     cursor: pointer;
+}
+
+.clip-player {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
 }
