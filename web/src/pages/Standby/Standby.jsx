@@ -11,7 +11,7 @@ export default function Standby({ onStart }) {
 
       <section className="standby-action" aria-label="음성 기록">
         <button type="button" className="standby-button" onClick={onStart}>
-          녹음 시작
+          녹음
         </button>
       </section>
 
