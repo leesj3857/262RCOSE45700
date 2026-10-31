@@ -1,0 +1,61 @@
+.standby-page {
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+}
+
+
+
+.standby-summary {
+    margin: 0;
+    font-size: 26px;
+    line-height: 1.3;
+    padding: 16px;
+    border-radius: 12px;
+    background: #f3f4f6;
+    text-align: center;
+}
+
+.standby-summary p {
+    margin: 0;
+    font-weight: 600;
+}
+
+.standby-action {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+
+.standby-button {
+    width: 160px;
+    height: 160px;
+    border: none;
+    border-radius: 50%;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 22px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.standby-button:active {
+    transform: scale(0.96);
+}
+
+
+.standby-hint {
+    margin: 0;
+    padding-bottom: 8px;
+    color: #6b7280;
+    font-size: 14px;
+    text-align: center;
+}
