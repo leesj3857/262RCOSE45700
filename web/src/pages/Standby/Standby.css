@@ -39,8 +39,8 @@
     align-items: center;
     justify-content: center;
     gap: 20px;
-    text-align: center;
 }
+
 
 .standby-button {
     width: 160px;
@@ -58,8 +58,11 @@
     transform: scale(0.96);
 }
 
-.standby-action p {
+
+.standby-hint {
     margin: 0;
+    padding-bottom: 8px;
     color: #6b7280;
     font-size: 14px;
+    text-align: center;
 }

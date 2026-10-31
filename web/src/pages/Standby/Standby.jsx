@@ -17,10 +17,10 @@ export default function Standby({ onStart }) {
         <button type="button" className="standby-button" onClick={onStart}>
           녹음 시작
         </button>
-
-
-        <p>상황이 안정된 후 버튼을 눌러 말씀해 주세요.</p>
       </section>
+
+      <p className="standby-hint">상황이 안정된 후 버튼을 눌러 말씀해 주세요.</p>
+
     </main>
   );
 }
