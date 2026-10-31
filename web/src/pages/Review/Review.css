@@ -1,25 +1,31 @@
 .review-page {
-    min-height: 100vh;
+    height: 100vh;
     max-width: 430px;
     margin: 0 auto;
     padding: 24px 20px;
     background: #ffffff;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .review-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    flex-shrink: 0;
     margin-bottom: 16px;
 }
+
 
 .review-header h1 {
     margin: 0;
     font-size: 22px;
 }
 
+.review-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: 16px;
+}
 
 
 
@@ -72,8 +78,8 @@
 }
 
 .review-actions {
-    margin-top: auto;
-    padding-top: 20px;
+    flex-shrink: 0;
+    margin-top: 12px;
     display: flex;
     flex-direction: column;
     gap: 12px;

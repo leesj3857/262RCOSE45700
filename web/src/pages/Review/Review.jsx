@@ -25,35 +25,36 @@ export default function Review({ audioClips, onAdd, onBack }) {
 
                 <h1>기록 확인</h1>
             </header>
+            {/* 스크롤되는 영역 */}
+            <div className="review-body">
+                {/* 1. 녹음 내용 재생 */}
+                <section className="review-section">
+                    <h2>녹음 내용</h2>
+                    {audioClips.map((clip) => (
+                        <ClipPlayer key={clip.url} url={clip.url} label={clip.label} />
+                    ))}
 
-            {/* 1. 녹음 내용 재생 */}
-            <section className="review-section">
-                <h2>녹음 내용</h2>
-                {audioClips.map((clip) => (
-                    <ClipPlayer key={clip.url} url={clip.url} label={clip.label} />
-                ))}
+                </section>
 
-            </section>
+                {/* 2. STT 결과 */}
+                <section className="review-section">
+                    <h2>음성 텍스트 - 현재는 mock data</h2>
+                    <p className="transcript">{review.transcript}</p>
+                </section>
 
-            {/* 2. STT 결과 */}
-            <section className="review-section">
-                <h2>음성 텍스트 - 현재는 mock data</h2>
-                <p className="transcript">{review.transcript}</p>
-            </section>
-
-            {/* 3. 필드 구조화 결과 (fields를 순회하므로 필드가 늘어나도 수정 불필요) */}
-            <section className="review-section">
-                <h2>자동 정리 - 현재는 mock data</h2>
-                {Object.entries(review.fields).map(([key, field]) => (
-                    <div key={key} className="review-field">
-                        <span className="field-label">{FIELD_LABELS[key] ?? key}</span>
-                        <span className={field.value ? "field-value" : "field-empty"}>
-                            {field.value || "확인 필요"}
-                        </span>
-                    </div>
-                ))}
-            </section>
-
+                {/* 3. 필드 구조화 결과 (fields를 순회하므로 필드가 늘어나도 수정 불필요) */}
+                <section className="review-section">
+                    <h2>자동 정리 - 현재는 mock data</h2>
+                    {Object.entries(review.fields).map(([key, field]) => (
+                        <div key={key} className="review-field">
+                            <span className="field-label">{FIELD_LABELS[key] ?? key}</span>
+                            <span className={field.value ? "field-value" : "field-empty"}>
+                                {field.value || "확인 필요"}
+                            </span>
+                        </div>
+                    ))}
+                </section>
+            </div>
             {/* 4. 추가녹음 , 뒤로가기 버튼 */}
 
             <section className="review-actions">
