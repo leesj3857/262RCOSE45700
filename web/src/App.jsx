@@ -34,12 +34,16 @@ export default function App() {
     setScreen("standby");
   }
 
+  function handleAddCancel() {
+    setScreen("review");
+  }
+
   if (screen === "record") {
     return <Record onFinish={handleFinish} onCancel={handleCancel} />;
   }
 
   if (screen === "addRecord") {
-    return <Record onFinish={handleAddFinish} onCancel={handleCancel} />;
+    return <Record onFinish={handleAddFinish} onCancel={handleAddCancel} />;
   }
 
 

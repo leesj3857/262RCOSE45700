@@ -55,14 +55,14 @@ export default function Review({ audioClips, onAdd, onBack }) {
                     ))}
                 </section>
             </div>
-            {/* 4. 추가녹음 , 뒤로가기 버튼 */}
+            {/* 4. 추가녹음 , 삭제 버튼 */}
 
             <section className="review-actions">
                 <button type="button" className="add-button" onClick={onAdd}>
                     추가녹음
                 </button>
                 <button type="button" className="back-button" onClick={onBack}>
-                    뒤로가기
+                    삭제하고 돌아가기
                 </button>
             </section>
         </main >
