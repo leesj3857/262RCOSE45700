@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import "./Record.css";
+import useAudioLevels from "./useAudioLevels";
+import Waveform from "./Waveform";
+
 
 // 초 단위 숫자를 "00:07" 형태로 변환
 function formatTime(totalSeconds) {
@@ -12,6 +15,9 @@ export default function Record({ onFinish, onCancel }) {
     const [seconds, setSeconds] = useState(0);
     const [ready, setReady] = useState(false); // 녹음이 실제로 시작됐는지
     const [error, setError] = useState("");
+    const [micStream, setMicStream] = useState(null);
+    const levels = useAudioLevels(micStream);
+
 
     // useRef: 화면을 다시 그리지 않고 값을 계속 들고 있는 상자
     const recorderRef = useRef(null);
@@ -42,6 +48,7 @@ export default function Record({ onFinish, onCancel }) {
                 };
 
                 recorder.start();
+                setMicStream(stream);
                 setReady(true);
 
                 // 녹음이 시작된 뒤부터 타이머 동작
@@ -89,10 +96,9 @@ export default function Record({ onFinish, onCancel }) {
                     <p className="record-label">{ready ? "듣는 중" : "마이크 준비 중..."}</p>
                 )}
 
-                {/* 나중에 실제 소리 크기에 반응하는 파형으로 교체할 자리 */}
-                <div className="record-wave" aria-hidden="true">
-                    <span></span><span></span><span></span><span></span><span></span>
-                </div>
+                {/* 파형 표시 */}
+                <Waveform levels={levels} />
+
             </section>
 
             <section className="record-actions">

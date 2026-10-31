@@ -33,18 +33,22 @@
 .record-wave {
   margin-top: 32px;
   height: 80px;
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 3px;
 }
 
 .record-wave span {
-  width: 10px;
+  width: 4px;
   height: 100%;
-  border-radius: 5px;
+  border-radius: 2px;
   background: #ef4444;
-  animation: wave 1s ease-in-out infinite;
+  transform: scaleY(0.08);
 }
+
+
 
 .record-wave span:nth-child(2) {
   animation-delay: 0.15s;
