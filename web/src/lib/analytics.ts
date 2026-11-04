@@ -1,5 +1,5 @@
 import type { CauseId, DateRange, EventTypeId, IssueEvent, Severity, Status } from "@/types/analytics";
-import { CAUSES, EVENT_TYPES, VEHICLES } from "@/mockData/taxonomy";
+import { CAUSES, EVENT_TYPES } from "@/mockData/taxonomy";
 import { WEEKS } from "@/mockData/events";
 import { addDays, daysIn, dayOf, hourOf, inRange, shortDay, weekdayIndex, weekdayOfDay } from "./dates";
 import { ZONE_BY_ID } from "./zones";
@@ -176,45 +176,6 @@ export function hourMatrix(events: IssueEvent[]): number[][] {
     matrix[weekdayIndex(e.occurredAt)][hourOf(e.occurredAt)] += 1;
   });
   return matrix;
-}
-
-export type VehicleStat = {
-  id: string;
-  plate: string;
-  count: number;
-  prevCount: number | null;
-  km: number;
-  rate: number;
-  versusFleet: number;
-};
-
-export function vehicleStats(events: IssueEvent[], baseline: IssueEvent[] | null, range: DateRange): VehicleStat[] {
-  const weeks = daysIn(range) / 7;
-  const rows = VEHICLES.map((v) => {
-    const count = events.filter((e) => e.vehicleId === v.id).length;
-    const km = Math.round(v.weeklyKm * weeks);
-    return {
-      id: v.id,
-      plate: v.plate,
-      count,
-      prevCount: baseline ? baseline.filter((e) => e.vehicleId === v.id).length : null,
-      km,
-      rate: km === 0 ? 0 : (count / km) * 1000,
-    };
-  });
-  const active = rows.filter((r) => r.count > 0 || events.length === 0);
-  const totalKm = active.reduce((a, r) => a + r.km, 0);
-  const totalCount = active.reduce((a, r) => a + r.count, 0);
-  const fleet = totalKm === 0 ? 0 : (totalCount / totalKm) * 1000;
-  return rows
-    .map((r) => ({ ...r, versusFleet: fleet === 0 ? 0 : Math.round(((r.rate - fleet) / fleet) * 100) }))
-    .sort((a, b) => b.rate - a.rate);
-}
-
-export function fleetRate(stats: VehicleStat[]): number {
-  const km = stats.reduce((a, r) => a + r.km, 0);
-  const count = stats.reduce((a, r) => a + r.count, 0);
-  return km === 0 ? 0 : (count / km) * 1000;
 }
 
 export function zoneCounts(events: IssueEvent[]): Map<string, IssueEvent[]> {

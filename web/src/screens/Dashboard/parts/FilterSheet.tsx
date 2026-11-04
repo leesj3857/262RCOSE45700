@@ -1,9 +1,10 @@
-import { useState, type ReactNode } from "react";
-import { ChevronDown } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
+import { ChevronDown, Search } from "lucide-react";
 import type { Filters } from "@/lib/filters";
 import { EMPTY_FILTERS, SEVERITY_LABEL, STATUS_LABEL } from "@/lib/filters";
 import { weekdayLabel } from "@/lib/dates";
 import { AREAS, CAUSES, EVENT_TYPES, HOUR_WINDOWS, ZONES } from "@/mockData/taxonomy";
+import { useScopeData } from "@/state/useScopeData";
 import Chip from "./Chip";
 import Sheet from "./Sheet";
 
@@ -67,6 +68,53 @@ function Switch({ label, hint, on, onChange }: { label: string; hint: string; on
         <span className={`absolute top-0.5 size-6 rounded-full bg-white shadow transition-all ${on ? "left-[22px]" : "left-0.5"}`} />
       </span>
     </button>
+  );
+}
+
+const ZONE_SHOWN = 6;
+
+function ZonePicker({ selected, onToggle }: { selected: string[]; onToggle: (id: string) => void }) {
+  const { scopedAll } = useScopeData();
+  const [query, setQuery] = useState("");
+  const q = query.trim();
+
+  const counts = useMemo(() => {
+    const m = new Map<string, number>();
+    scopedAll.forEach((e) => m.set(e.zoneId, (m.get(e.zoneId) ?? 0) + 1));
+    return m;
+  }, [scopedAll]);
+
+  const ranked = useMemo(() => [...ZONES].sort((a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0)), [counts]);
+  const areaName = (id: string) => AREAS.find((a) => a.id === id)?.label ?? "";
+
+  const shown = q
+    ? ranked.filter((z) => `${z.name} ${z.address} ${areaName(z.area)}`.includes(q))
+    : [...ranked.filter((z) => selected.includes(z.id)), ...ranked.filter((z) => !selected.includes(z.id))].slice(0, Math.max(ZONE_SHOWN, selected.length));
+
+  return (
+    <div className="flex flex-col gap-3">
+      <label className="flex h-11 items-center gap-2 rounded-full bg-surface px-4">
+        <Search className="size-4 shrink-0 text-ink-muted" aria-hidden="true" />
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="구간이나 동네 이름으로 찾기"
+          aria-label="구간 검색"
+          className="min-w-0 flex-1 bg-transparent text-[14px] placeholder:text-ink-muted"
+        />
+      </label>
+      {!q && <p className="text-[12px] font-bold text-ink-muted">이벤트가 많은 구간</p>}
+      <div className="flex flex-wrap gap-2">
+        {shown.map((z) => (
+          <Chip key={z.id} active={selected.includes(z.id)} onClick={() => onToggle(z.id)} count={counts.get(z.id) ?? 0}>
+            {q ? `${areaName(z.area)} ${z.name}` : z.name}
+          </Chip>
+        ))}
+        {shown.length === 0 && <p className="text-[13px] text-ink-muted">맞는 구간이 없어요. 다른 이름으로 찾아보세요.</p>}
+      </div>
+      {!q && ZONES.length > shown.length && <p className="text-[12px] text-ink-muted">나머지 {ZONES.length - shown.length}곳은 검색해서 찾을 수 있어요.</p>}
+    </div>
   );
 }
 
@@ -157,15 +205,7 @@ export default function FilterSheet({ onClose, filters, onApply, count }: Props)
           </Sub>
         </Fold>
         <Fold title="어디서" active={draft.zone.length}>
-          {AREAS.map((a) => (
-            <Sub key={a.id} title={a.label}>
-              {ZONES.filter((z) => z.area === a.id).map((z) => (
-                <Chip key={z.id} active={draft.zone.includes(z.id)} onClick={() => set({ zone: toggle(draft.zone, z.id) })}>
-                  {z.name}
-                </Chip>
-              ))}
-            </Sub>
-          ))}
+          <ZonePicker selected={draft.zone} onToggle={(id) => set({ zone: toggle(draft.zone, id) })} />
         </Fold>
         <Fold title="날씨" active={draft.wx.length}>
           <div className="flex flex-wrap gap-2">

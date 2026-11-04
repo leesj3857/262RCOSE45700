@@ -83,7 +83,7 @@ export default function MoreSheet({ open, onClose }: { open: boolean; onClose: (
         <div className="my-2 border-t border-line" />
         <p className="px-3 pt-1 pb-1 text-[13px] font-bold text-ink-sub">내보내기·공유</p>
         <Row icon={<Copy className="size-5" aria-hidden="true" />} title="요약 텍스트 복사" hint="메신저나 보고서에 바로 붙여넣기" onClick={copySummary} />
-        <Row icon={<Download className="size-5" aria-hidden="true" />} title="CSV로 내보내기" hint={`지금 범위의 이벤트 ${events.length}건`} onClick={exportCsv} />
+        <Row icon={<Download className="size-5" aria-hidden="true" />} title="CSV로 내보내기" hint={`현재 기간의 이벤트 ${events.length}건`} onClick={exportCsv} />
         <Row icon={<Link2 className="size-5" aria-hidden="true" />} title="현재 화면 링크 복사" hint="필터와 범위를 그대로 공유" onClick={copyLink} />
         <div className="my-2 border-t border-line" />
         {confirming ? (
@@ -99,10 +99,10 @@ export default function MoreSheet({ open, onClose }: { open: boolean; onClose: (
             </div>
           </div>
         ) : (
-          <Row icon={<RotateCcw className="size-5" aria-hidden="true" />} title="시연 데이터 초기화" hint="검토 상태, 메모, 수정 내용을 처음으로" onClick={() => setConfirming(true)} danger />
+          <Row icon={<RotateCcw className="size-5" aria-hidden="true" />} title="시연 데이터 초기화" hint="검토 상태, 메모, 수정 내용을 처음 상태로" onClick={() => setConfirming(true)} danger />
         )}
         <p className="mt-4 px-3 text-[12px] leading-relaxed text-ink-muted">
-          예시 데이터로 구성한 화면입니다. 서버와 연결하기 전에 화면 흐름과 분석 방식을 확인하는 용도예요.
+          예시 데이터로 구성한 화면이에요. 서버와 연결하기 전에 화면 흐름과 분석 방식을 확인하는 용도예요.
         </p>
       </div>
     </Sheet>

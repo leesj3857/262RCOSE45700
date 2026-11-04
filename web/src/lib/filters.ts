@@ -13,7 +13,6 @@ export type Filters = {
   wx: string[];
   st: Status[];
   zone: string[];
-  veh: string[];
   check: boolean;
   star: boolean;
   hr: [number, number] | null;
@@ -30,7 +29,6 @@ export const EMPTY_FILTERS: Filters = {
   wx: [],
   st: [],
   zone: [],
-  veh: [],
   check: false,
   star: false,
   hr: null,
@@ -64,7 +62,6 @@ export function parseFilters(params: URLSearchParams): Filters {
     wx: list(params.get("wx")),
     st: list(params.get("st")) as Status[],
     zone: list(params.get("zone")),
-    veh: list(params.get("veh")),
     check: params.get("check") === "1",
     star: params.get("star") === "1",
     hr: hrParts.length === 2 && hrParts.every((n) => !Number.isNaN(n)) ? [hrParts[0], hrParts[1]] : null,
@@ -83,7 +80,6 @@ export function filtersToQuery(f: Filters): string {
   if (f.wx.length) q.set("wx", f.wx.join(","));
   if (f.st.length) q.set("st", f.st.join(","));
   if (f.zone.length) q.set("zone", f.zone.join(","));
-  if (f.veh.length) q.set("veh", f.veh.join(","));
   if (f.check) q.set("check", "1");
   if (f.star) q.set("star", "1");
   if (f.hr) q.set("hr", `${f.hr[0]}-${f.hr[1]}`);
@@ -107,7 +103,6 @@ export function activeCount(f: Filters): number {
     f.wx.length +
     f.st.length +
     f.zone.length +
-    f.veh.length +
     (f.check ? 1 : 0) +
     (f.star ? 1 : 0) +
     (f.hr ? 1 : 0) +
@@ -140,7 +135,6 @@ export function applyFilters(events: IssueEvent[], f: Filters): IssueEvent[] {
     if (f.wx.length && !f.wx.includes(e.weather || "미기록")) return false;
     if (f.st.length && !f.st.includes(e.status)) return false;
     if (f.zone.length && !f.zone.includes(e.zoneId)) return false;
-    if (f.veh.length && !f.veh.includes(e.vehicleId)) return false;
     if (f.check && !needsCheck(e)) return false;
     if (f.star && !e.starred) return false;
     if (f.hr) {
@@ -171,7 +165,6 @@ export function describeFilters(f: Filters): FilterChip[] {
   f.wx.forEach((w) => chips.push({ key: `wx-${w}`, label: `날씨 ${w}`, clear: (s) => ({ ...s, wx: s.wx.filter((x) => x !== w) }) }));
   f.st.forEach((v) => chips.push({ key: `st-${v}`, label: STATUS_LABEL[v], clear: (s) => ({ ...s, st: s.st.filter((x) => x !== v) }) }));
   f.zone.forEach((z) => chips.push({ key: `zone-${z}`, label: ZONE_BY_ID[z]?.name ?? z, clear: (s) => ({ ...s, zone: s.zone.filter((x) => x !== z) }) }));
-  f.veh.forEach((v) => chips.push({ key: `veh-${v}`, label: `차량 ${v}`, clear: (s) => ({ ...s, veh: s.veh.filter((x) => x !== v) }) }));
   if (f.check) chips.push({ key: "check", label: "확인 필요만", clear: (s) => ({ ...s, check: false }) });
   if (f.star) chips.push({ key: "star", label: "즐겨찾기만", clear: (s) => ({ ...s, star: false }) });
   if (f.hr) {

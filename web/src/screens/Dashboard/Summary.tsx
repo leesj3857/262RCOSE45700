@@ -87,7 +87,7 @@ export default function Summary() {
 
       <div className="flex flex-col gap-7 px-5 pt-5 pb-10">
         {total === 0 ? (
-          <EmptyState icon={<Inbox className="size-6" aria-hidden="true" />} title="이 범위에는 기록이 없어요" description="위의 보기 범위에서 기간을 늘리거나 지역·차량을 바꿔 보세요." />
+          <EmptyState icon={<Inbox className="size-6" aria-hidden="true" />} title="이 범위에는 기록이 없어요" description="위에서 기간을 늘리거나 다른 차량을 골라 보세요." />
         ) : (
           <>
             <section aria-label="기간 요약" className="overflow-hidden rounded-panel bg-navy p-6 text-white">
@@ -135,7 +135,7 @@ export default function Summary() {
                   );
                 })}
               </ul>
-              <p className="mt-3 text-center text-[12px] text-white/60">막대를 누르면 그 날(주)의 이벤트가 열려요</p>
+              <p className="mt-3 text-center text-[12px] text-white/60">막대를 누르면 그날(주)의 이벤트가 열려요</p>
             </section>
 
             <section aria-label="지금 할 일" className="flex flex-col gap-3">

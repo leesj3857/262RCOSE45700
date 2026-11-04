@@ -247,6 +247,8 @@ function buildWeek(
   counts: { types?: Record<EventTypeId, number>; causes?: Record<CauseId, number> },
   curated: Curated[],
   seed: number,
+  tag = "w",
+  vehicleIdx = 0,
 ): IssueEvent[] {
   const week = WEEKS[weekIdx];
   const rng = mulberry32(seed);
@@ -283,7 +285,7 @@ function buildWeek(
     const zone = ZONES.find((z) => z.id === d.zoneId) as Zone;
     const wr = rng();
     const fallbackWeather: Weather = wr < 0.12 ? "비" : wr < 0.32 ? "흐림" : "맑음";
-    return buildEvent(`w${37 + weekIdx}-${pad(i + 1)}`, weekIdx, addDays(week.start, d.day), d.day, d, zone, rng, fallbackWeather, rng() < 0.8);
+    return buildEvent(`${tag}${37 + weekIdx}-${pad(i + 1)}`, weekIdx, addDays(week.start, d.day), d.day, { ...d, vehicleIdx }, zone, rng, fallbackWeather, rng() < 0.8);
   });
 }
 
@@ -346,6 +348,10 @@ export const EVENTS_BY_WEEK: IssueEvent[][] = WEEK_TOTALS.map((total, i) => {
   return buildWeek(i, total, {}, [], 1700 + i * 211);
 });
 
+const SECOND_TOTALS = [38, 41, 36, 40, 37, 39, 35, 33];
+
+const SECOND_CAR_BY_WEEK: IssueEvent[][] = SECOND_TOTALS.map((total, i) => buildWeek(i, total, {}, [], 9100 + i * 137, "s", 1));
+
 export const EVENTS_THIS_WEEK = EVENTS_BY_WEEK[7];
 export const EVENTS_PREV_WEEK = EVENTS_BY_WEEK[6];
-export const ALL_EVENTS: IssueEvent[] = EVENTS_BY_WEEK.flat();
+export const ALL_EVENTS: IssueEvent[] = [...EVENTS_BY_WEEK.flat(), ...SECOND_CAR_BY_WEEK.flat()];

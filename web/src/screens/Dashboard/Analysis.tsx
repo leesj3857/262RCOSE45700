@@ -3,22 +3,20 @@ import { ArrowRight, Ellipsis, Eye, Lightbulb, ScanText } from "lucide-react";
 import type { EventTypeId, IssueEvent } from "@/types/analytics";
 import {
   CAUSE_BY_ID,
-  fleetRate,
   hourMatrix,
   pctChange,
   summarize,
   topWindow,
-  vehicleStats,
   weeklySeries,
   zoneCauseSeries,
 } from "@/lib/analytics";
 import { buildRecommendations } from "@/lib/recommendations";
-import { dayOf, weekdayLabel } from "@/lib/dates";
+import { weekdayLabel } from "@/lib/dates";
 import { eventsHref } from "@/lib/filters";
 import { baselineName, periodLabel } from "@/lib/scope";
 import { navigate, type HashRoute } from "@/lib/useHashRoute";
 import { ZONE_BY_ID } from "@/lib/zones";
-import { AREAS, CAUSES, EVENT_TYPES, HOUR_MAX, HOUR_MIN, OPERATORS, TYPE_COLORS } from "@/mockData/taxonomy";
+import { AREAS, CAUSES, EVENT_TYPES, HOUR_MAX, HOUR_MIN, TYPE_COLORS } from "@/mockData/taxonomy";
 import { showToast } from "@/state/toast";
 import { useScopeData } from "@/state/useScopeData";
 import { prefsStore, restoreRec, setScope } from "@/state/userData";
@@ -153,7 +151,7 @@ function TrendChart({ events, rangeStart, rangeEnd }: { events: IssueEvent[]; ra
           type="button"
           onClick={() => {
             setScope({ period: "custom", from: cur.range.start, to: cur.range.end });
-            showToast("이 주로 보기 범위를 바꿨어요");
+            showToast("선택한 주로 기간을 바꿨어요");
           }}
           className="mt-3 flex h-11 w-full items-center justify-center gap-1.5 rounded-full bg-white text-[13px] font-bold shadow-sm active:bg-line"
         >
@@ -249,26 +247,26 @@ function Heatmap({ events }: { events: IssueEvent[] }) {
   );
 }
 
-type Tab = "recs" | "trend" | "cause" | "vehicle";
+type Tab = "recs" | "trend" | "cause" | "quality";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "recs", label: "추천" },
   { id: "trend", label: "추이·시간" },
   { id: "cause", label: "원인·구간" },
-  { id: "vehicle", label: "차량·품질" },
+  { id: "quality", label: "기록 품질" },
 ];
 
-const ALIAS: Record<string, Tab> = { recs: "recs", trend: "trend", time: "trend", cause: "cause", patterns: "cause", vehicle: "vehicle" };
+const ALIAS: Record<string, Tab> = { recs: "recs", trend: "trend", time: "trend", cause: "cause", patterns: "cause", quality: "quality", vehicle: "quality" };
 
 const SUBS: Record<Tab, string> = {
   recs: "데이터에서 찾은 개선 포인트예요",
   trend: "언제 늘고 줄었는지 살펴봐요",
-  cause: "무엇이, 어디서 원인인지 살펴봐요",
-  vehicle: "차량별 차이와 자동 정리 품질이에요",
+  cause: "원인이 무엇이고 어디서 생기는지 살펴봐요",
+  quality: "음성이 얼마나 정확히 정리됐는지 보여줘요",
 };
 
 export default function Analysis({ route }: { route: HashRoute }) {
-  const { scope, range, events, baseline, scopedAll, all } = useScopeData();
+  const { scope, range, events, baseline, scopedAll } = useScopeData();
   const { dismissedRecs } = prefsStore.use();
   const [showHidden, setShowHidden] = useState(false);
   const [more, setMore] = useState(false);
@@ -278,8 +276,6 @@ export default function Analysis({ route }: { route: HashRoute }) {
   const allRecs = useMemo(() => buildRecommendations({ events, scopedAll, range }), [events, scopedAll, range]);
   const recs = allRecs.filter((r) => !dismissedRecs.includes(r.id));
   const hidden = allRecs.filter((r) => dismissedRecs.includes(r.id));
-  const vStats = useMemo(() => vehicleStats(events, baseline, range), [events, baseline, range]);
-  const fleet = fleetRate(vStats);
 
   const total = events.length;
   const byArea = (cause: string) => AREAS.map((a) => events.filter((e) => e.cause === cause && ZONE_BY_ID[e.zoneId].area === a.id).length);
@@ -288,21 +284,10 @@ export default function Analysis({ route }: { route: HashRoute }) {
   const compareName = baselineName(scope);
   const maxCause = Math.max(1, ...CAUSES.map((c) => events.filter((e) => e.cause === c.id).length));
   const maxType = Math.max(1, ...summary.byType.map((t) => t.count));
-  const opRows = OPERATORS.map((o) => ({ ...o, n: events.filter((e) => e.operatorId === o.id).length })).sort((a, b) => b.n - a.n);
-  const maxOp = Math.max(1, ...opRows.map((o) => o.n));
-  const maxRate = Math.max(0.1, ...vStats.map((v) => v.rate));
   const fields = events.flatMap((e) => e.fields);
   const autoRate = fields.length ? Math.round((fields.filter((f) => f.value).length / fields.length) * 100) : 0;
   const avgStt = total ? Math.round((events.reduce((a, e) => a + e.sttConfidence, 0) / total) * 100) : 0;
   const edited = fields.filter((f) => f.edited).length;
-
-  function vehicleWeekly(id: string): number[] {
-    return Array.from({ length: 8 }, (_, i) => {
-      const s = new Date(Date.UTC(2026, 8, 7 + i * 7)).toISOString().slice(0, 10);
-      const e = new Date(Date.UTC(2026, 8, 7 + i * 7 + 6)).toISOString().slice(0, 10);
-      return all.filter((ev) => ev.vehicleId === id && dayOf(ev.occurredAt) >= s && dayOf(ev.occurredAt) <= e).length;
-    });
-  }
 
   const setTab = (t: Tab) => navigate(`/admin/analysis?s=${t}`, true);
 
@@ -466,7 +451,7 @@ export default function Analysis({ route }: { route: HashRoute }) {
             <Block id="severity" title="심각도·날씨">
               <div className="rounded-panel border border-line bg-white p-5">
                 <h3 className="text-[15px] font-extrabold">심각도</h3>
-                <div className="mt-3 flex h-4 overflow-hidden rounded-full bg-surface" role="img" aria-label={`사고 ${summary.bySeverity.high}건, 주의 ${summary.bySeverity.mid}건, 낮음 ${summary.bySeverity.low}건`}>
+                <div className="mt-3 flex h-4 overflow-hidden rounded-full bg-surface" role="img" aria-label={`높음 ${summary.bySeverity.high}건, 주의 ${summary.bySeverity.mid}건, 낮음 ${summary.bySeverity.low}건`}>
                   <span className="bg-danger" style={{ width: `${total ? (summary.bySeverity.high / total) * 100 : 0}%` }} />
                   <span className="bg-warning" style={{ width: `${total ? (summary.bySeverity.mid / total) * 100 : 0}%` }} />
                   <span className="bg-ink-muted/40" style={{ width: `${total ? (summary.bySeverity.low / total) * 100 : 0}%` }} />
@@ -519,53 +504,9 @@ export default function Analysis({ route }: { route: HashRoute }) {
           </>
         )}
 
-        {tab === "vehicle" && (
+        {tab === "quality" && (
           <>
-            <Block id="vehicle" title="차량별" note="주행 거리가 달라서 1,000km당 이벤트 수로 비교해요 (주행 거리는 예시 값)">
-              <ul className="flex flex-col gap-2.5">
-                {vStats.map((v) => (
-                  <li key={v.id}>
-                    <a href={`#${eventsHref({ veh: [v.id] })}`} className="flex items-center gap-3 rounded-[22px] border border-line bg-white p-4 active:bg-surface">
-                      <div className="min-w-0 flex-1">
-                        <p className="flex items-center gap-2">
-                          <span className="num text-[16px] font-extrabold">{v.id}</span>
-                          <span className={`num inline-flex h-5 items-center rounded-full px-2 text-[11px] font-bold ${v.versusFleet > 15 ? "bg-danger/10 text-danger" : v.versusFleet < -15 ? "bg-[#e6f6ed] text-[#0f7a42]" : "bg-surface text-ink-sub"}`}>
-                            평균 대비 {v.versusFleet > 0 ? "+" : ""}
-                            {v.versusFleet}%
-                          </span>
-                        </p>
-                        <p className="num mt-0.5 text-[12px] text-ink-muted">
-                          {v.count}건 · {v.km.toLocaleString()}km · 1,000km당 {v.rate.toFixed(1)}건
-                        </p>
-                        <span className="mt-2 block h-2 overflow-hidden rounded-full bg-surface">
-                          <span className="block h-full rounded-full bg-kakao" style={{ width: `${(v.rate / maxRate) * 100}%` }} />
-                        </span>
-                      </div>
-                      <Sparkline values={vehicleWeekly(v.id)} label={`${v.id} 최근 8주 추이`} width={72} height={32} />
-                    </a>
-                  </li>
-                ))}
-              </ul>
-              <p className="num px-1 text-[12px] text-ink-muted">전체 평균 1,000km당 {fleet.toFixed(1)}건</p>
-            </Block>
-
-            <Block id="operator" title="오퍼레이터별 기록 수">
-              <div className="rounded-panel border border-line bg-white p-5">
-                <ul className="flex flex-col gap-2.5">
-                  {opRows.map((o) => (
-                    <li key={o.id} className="flex items-center gap-3">
-                      <span className="w-12 shrink-0 text-[14px] font-semibold text-ink-sub">{o.name}</span>
-                      <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface">
-                        <span className="block h-full rounded-full bg-navy" style={{ width: `${(o.n / maxOp) * 100}%` }} />
-                      </span>
-                      <span className="num w-8 shrink-0 text-right text-[14px] font-extrabold">{o.n}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </Block>
-
-            <Block id="quality" title="자동 정리 품질" note="근거 발화가 없는 항목은 지어내지 않고 비워 두기 때문에 자동 채움 비율이 100%가 되지 않아요.">
+            <Block id="quality" title="자동 정리 품질" note="근거 발화가 없는 항목은 추측해서 채우지 않고 비워 두기 때문에 자동 채움 비율이 100%가 되지 않아요.">
               <div className="grid grid-cols-3 gap-2 text-center">
                 {[
                   { v: `${autoRate}%`, l: "항목 자동 채움" },

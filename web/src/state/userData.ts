@@ -60,7 +60,7 @@ export function setScope(patch: Partial<Scope>) {
 }
 
 export function resetScope() {
-  scopeStore.reset();
+  scopeStore.set((s) => ({ scope: { ...DEFAULT_SCOPE, vehicle: s.scope.vehicle } }));
 }
 
 export function setStatus(ids: string[], status: Status) {

@@ -24,7 +24,7 @@ import { copyText } from "@/lib/exporters";
 import { eventsHref, parseListParams, runList, STATUS_LABEL } from "@/lib/filters";
 import { navigate, type HashRoute } from "@/lib/useHashRoute";
 import { ZONE_BY_ID } from "@/lib/zones";
-import { OPERATORS } from "@/mockData/taxonomy";
+import { OPERATORS, VEHICLES } from "@/mockData/taxonomy";
 import { showToast } from "@/state/toast";
 import { useAllEvents, useScopeData } from "@/state/useScopeData";
 import { patchOverlay, restoreOverlay, setStatus, snapshotOverlay } from "@/state/userData";
@@ -222,7 +222,7 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
               {zone.address}
             </div>
             <div>
-              <span className="num">{event.vehicleId}</span> · {operator?.name} 오퍼레이터
+              {VEHICLES.find((v) => v.id === event.vehicleId)?.name} · {operator?.name} 오퍼레이터
             </div>
           </dl>
           <div className="mt-4 inline-flex rounded-full bg-white/10 px-3.5 py-2 [&_span]:text-white/90">
@@ -363,7 +363,7 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
                 </li>
               </ul>
               <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
-                모든 항목은 근거 발화가 확인될 때만 채워요. 근거가 없으면 지어내지 않고 비워 둡니다.
+                모든 항목은 근거 발화가 확인될 때만 채워요. 근거가 없으면 추측해서 채우지 않고 비워 둬요.
               </p>
             </div>
           )}
@@ -384,7 +384,7 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
           {logOpen && (
             <div className="px-5 pb-5">
               <VehicleLogChart event={event} />
-              <p className="mt-2 text-[12px] text-ink-muted">합성 로그 예시입니다. 실제 차량 로그 연동은 이후 단계예요.</p>
+              <p className="mt-2 text-[12px] text-ink-muted">합성 로그 예시예요. 실제 차량 로그 연동은 이후 단계예요.</p>
             </div>
           )}
         </section>

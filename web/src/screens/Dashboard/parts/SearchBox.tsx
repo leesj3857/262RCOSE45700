@@ -6,7 +6,7 @@ const SUGGESTIONS = [
   "성북구 킥보드 관련 사고 찾아줘",
   "비 오는 날 이륜차 관련 급정거",
   "강남대로 보행자 무단횡단",
-  "퇴근 시간 확인 필요한 이벤트",
+  "퇴근 시간대 확인이 필요한 이벤트",
   "충돌 사고 보여줘",
 ];
 
@@ -86,7 +86,7 @@ export default function SearchBox({ value, onChange, autoFocus = false }: Props)
         <button
           type="button"
           onClick={listen}
-          aria-label="말해서 검색"
+          aria-label="음성으로 검색"
           className="relative flex size-11 shrink-0 items-center justify-center rounded-full bg-kakao text-ink active:bg-kakao-press"
         >
           {listening && <span aria-hidden="true" className="absolute inset-0 rounded-full bg-kakao animate-pulse-ring" />}

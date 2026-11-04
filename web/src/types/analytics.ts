@@ -79,6 +79,7 @@ export type Overlay = {
 
 export type Vehicle = {
   id: string;
+  name: string;
   plate: string;
   weeklyKm: number;
   weight: number;

@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import type { DateRange, IssueEvent } from "@/types/analytics";
 import { inRange } from "@/lib/dates";
 import { baselineOf, resolveRange, type Scope } from "@/lib/scope";
-import { ZONE_BY_ID } from "@/lib/zones";
 import { ALL_EVENTS } from "@/mockData/events";
 import { applyOverlay, overlayStore, scopeStore } from "./userData";
 
@@ -17,9 +16,7 @@ export type ScopeData = {
 };
 
 function matches(e: IssueEvent, scope: Scope): boolean {
-  if (scope.area !== "all" && ZONE_BY_ID[e.zoneId].area !== scope.area) return false;
-  if (scope.vehicle !== "all" && e.vehicleId !== scope.vehicle) return false;
-  return true;
+  return e.vehicleId === scope.vehicle;
 }
 
 export function filterByScope(all: IssueEvent[], scope: Scope): IssueEvent[] {

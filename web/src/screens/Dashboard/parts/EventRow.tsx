@@ -20,7 +20,7 @@ type Props = {
 export function toggleStar(event: IssueEvent) {
   const next = !event.starred;
   patchOverlay(event.id, { starred: next });
-  showToast(next ? "즐겨찾기에 추가했어요" : "즐겨찾기에서 뺐어요");
+  showToast(next ? "즐겨찾기에 추가했어요" : "즐겨찾기를 해제했어요");
 }
 
 export default function EventRow({ event, ctx, selectMode = false, selected = false, onToggle, showDate = false }: Props) {
@@ -54,7 +54,6 @@ export default function EventRow({ event, ctx, selectMode = false, selected = fa
           {showDate && `${event.occurredAt.slice(5, 10).replace("-", ".")} `}
           {clockOf(event.occurredAt)}
         </span>
-        <span className="num">{event.vehicleId}</span>
         {check && (
           <span className="inline-flex items-center gap-1 font-bold text-warning">
             <CircleAlert className="size-3.5" aria-hidden="true" />

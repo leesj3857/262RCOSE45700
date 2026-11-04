@@ -122,12 +122,8 @@ export const AREA_ROADS: Record<AreaId, { arterial: string[]; minor: string[]; w
 };
 
 export const VEHICLES: Vehicle[] = [
-  { id: "AD-01", plate: "서울 71바 1201", weeklyKm: 1480, weight: 1 },
-  { id: "AD-02", plate: "서울 71바 1202", weeklyKm: 1620, weight: 1 },
-  { id: "AD-03", plate: "서울 71바 1203", weeklyKm: 1390, weight: 1.7 },
-  { id: "AD-04", plate: "서울 71바 1204", weeklyKm: 1550, weight: 1 },
-  { id: "AD-05", plate: "서울 71바 1205", weeklyKm: 1210, weight: 0.7 },
-  { id: "AD-06", plate: "서울 71바 1206", weeklyKm: 1700, weight: 0.9 },
+  { id: "AD-01", name: "아이오닉 5 자율주행", plate: "서울 71바 1201", weeklyKm: 1480, weight: 1 },
+  { id: "AD-02", name: "쏘나타 자율주행", plate: "서울 71바 1202", weeklyKm: 1210, weight: 1 },
 ];
 
 export const OPERATORS: Operator[] = [

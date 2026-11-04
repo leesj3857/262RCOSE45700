@@ -192,7 +192,7 @@ export default function EventList({ route }: { route: HashRoute }) {
                 type="button"
                 onClick={() => {
                   toggleSavedSearch(q);
-                  showToast(saved ? "저장한 검색에서 뺐어요" : "검색을 저장했어요");
+                  showToast(saved ? "저장한 검색에서 지웠어요" : "검색을 저장했어요");
                 }}
                 aria-pressed={saved}
                 className="-mr-1 flex h-10 items-center gap-1 rounded-full px-2.5 text-[12px] font-bold active:bg-white/60"
@@ -302,7 +302,7 @@ export default function EventList({ route }: { route: HashRoute }) {
           <EmptyState
             icon={<FilterX className="size-6" aria-hidden="true" />}
             title={filtered ? "조건에 맞는 이벤트가 없어요" : "이 범위에는 이벤트가 없어요"}
-            description={filtered ? "아래 방법 중 하나로 조건을 풀어 보세요." : "위의 보기 범위에서 기간이나 지역을 바꿔 보세요."}
+            description={filtered ? "아래 방법 중 하나로 조건을 줄여 보세요." : "위에서 기간을 바꾸거나 다른 차량을 골라 보세요."}
             action={
               <div className="flex w-full min-w-[240px] flex-col gap-2">
                 {relax.map((r) => (

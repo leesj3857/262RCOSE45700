@@ -7,7 +7,6 @@ import { eventsHref } from "@/lib/filters";
 import type { HashRoute } from "@/lib/useHashRoute";
 import { ZONE_BY_ID } from "@/lib/zones";
 import { AREAS, CAUSES, ZONES } from "@/mockData/taxonomy";
-import { resetScope } from "@/state/userData";
 import { useScopeData } from "@/state/useScopeData";
 import Chip from "./parts/Chip";
 import Delta from "./parts/Delta";
@@ -27,11 +26,11 @@ const MODES: { id: MapMode; label: string }[] = [
 ];
 
 export default function MapView({ route }: { route: HashRoute }) {
-  const { scope, range, events, baseline, scopedAll } = useScopeData();
+  const { range, events, baseline, scopedAll } = useScopeData();
   const zoneParam = route.params.get("zone");
   const eventParam = route.params.get("event");
 
-  const initialArea: AreaId = zoneParam && ZONE_BY_ID[zoneParam] ? ZONE_BY_ID[zoneParam].area : scope.area !== "all" ? scope.area : "gangnam";
+  const initialArea: AreaId = zoneParam && ZONE_BY_ID[zoneParam] ? ZONE_BY_ID[zoneParam].area : "gangnam";
   const [area, setArea] = useState<AreaId>(initialArea);
   const [mode, setMode] = useState<MapMode>(eventParam ? "events" : "count");
   const [cause, setCause] = useState<CauseId | "all">("all");
@@ -141,18 +140,7 @@ export default function MapView({ route }: { route: HashRoute }) {
           <EmptyState
             icon={<MapPinOff className="size-6" aria-hidden="true" />}
             title="이 지역에는 표시할 이벤트가 없어요"
-            description={
-              scope.area !== "all" && scope.area !== area
-                ? "보기 범위가 다른 지역으로 제한되어 있어요."
-                : "다른 지역을 고르거나 원인 조건과 보기 범위를 바꿔 보세요."
-            }
-            action={
-              scope.area !== "all" || scope.vehicle !== "all" ? (
-                <button type="button" onClick={resetScope} className="h-11 rounded-full bg-ink px-5 text-[14px] font-bold text-white">
-                  보기 범위 처음으로
-                </button>
-              ) : undefined
-            }
+            description="다른 지역을 고르거나 원인 조건과 보기 기간을 바꿔 보세요."
           />
         )}
 
@@ -222,7 +210,7 @@ export default function MapView({ route }: { route: HashRoute }) {
             {pickedEvent ? (
               <EventRow event={pickedEvent} showDate />
             ) : (
-              <p className="rounded-[20px] bg-surface px-4 py-6 text-center text-[14px] text-ink-sub">지도에서 점을 눌러 이벤트를 확인하세요.</p>
+              <p className="rounded-[20px] bg-surface px-4 py-6 text-center text-[14px] text-ink-sub">지도에서 점을 눌러 이벤트를 확인해 보세요.</p>
             )}
             <p className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[12px] text-ink-muted">
               <span className="inline-flex items-center gap-1.5">

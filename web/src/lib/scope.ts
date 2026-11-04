@@ -1,4 +1,4 @@
-import type { AreaId, DateRange } from "@/types/analytics";
+import type { DateRange } from "@/types/analytics";
 import { addDays, daysIn } from "@/lib/dates";
 import { DATA_END, DATA_START, PREV_WEEK, THIS_WEEK, WEEKS } from "@/mockData/events";
 
@@ -8,21 +8,19 @@ export type Scope = {
   period: PeriodId;
   from: string;
   to: string;
-  area: "all" | AreaId;
-  vehicle: "all" | string;
+  vehicle: string;
 };
 
 export const DEFAULT_SCOPE: Scope = {
   period: "thisWeek",
   from: THIS_WEEK.start,
   to: THIS_WEEK.end,
-  area: "all",
-  vehicle: "all",
+  vehicle: "AD-01",
 };
 
 export const PERIODS: { id: PeriodId; label: string; hint: string }[] = [
   { id: "thisWeek", label: "이번 주", hint: "가장 최근 1주" },
-  { id: "lastWeek", label: "지난 주", hint: "그 전 1주" },
+  { id: "lastWeek", label: "지난주", hint: "그 전 1주" },
   { id: "4w", label: "최근 4주", hint: "한 달 흐름" },
   { id: "8w", label: "최근 8주", hint: "전체 수집 기간" },
   { id: "custom", label: "선택 기간", hint: "시작일과 종료일 선택" },
@@ -64,7 +62,7 @@ export function periodLabel(scope: Scope): string {
 }
 
 export function isDefaultScope(scope: Scope): boolean {
-  return scope.period === "thisWeek" && scope.area === "all" && scope.vehicle === "all";
+  return scope.period === "thisWeek";
 }
 
 export function baselineName(scope: Scope): string | null {

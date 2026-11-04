@@ -2,14 +2,13 @@ import { useMemo, useState } from "react";
 import { CalendarDays, ChevronDown, CircleAlert, RotateCcw } from "lucide-react";
 import { daysIn, rangeText } from "@/lib/dates";
 import { DEFAULT_SCOPE, PERIODS, isDefaultScope, periodLabel, resolveRange, type PeriodId, type Scope } from "@/lib/scope";
-import { AREAS, VEHICLES } from "@/mockData/taxonomy";
 import { DATA_END, DATA_START } from "@/mockData/events";
 import { filterByScope, useAllEvents, useScopeData } from "@/state/useScopeData";
 import { resetScope, setScope } from "@/state/userData";
 import Chip from "./Chip";
 import RangeCalendar from "./RangeCalendar";
-import Segmented from "./Segmented";
 import Sheet from "./Sheet";
+import VehicleSwitch from "./VehicleSwitch";
 
 function ScopeSheet({ onClose }: { onClose: () => void }) {
   const { scope } = useScopeData();
@@ -23,10 +22,6 @@ function ScopeSheet({ onClose }: { onClose: () => void }) {
       period: Object.fromEntries(
         PERIODS.filter((p) => p.id !== "custom").map((p) => [p.id, filterByScope(all, { ...draft, period: p.id }).length]),
       ) as Record<string, number>,
-      area: Object.fromEntries(AREAS.map((a) => [a.id, filterByScope(all, { ...draft, area: a.id }).length])) as Record<string, number>,
-      areaAll: filterByScope(all, { ...draft, area: "all" }).length,
-      vehicle: Object.fromEntries(VEHICLES.map((v) => [v.id, filterByScope(all, { ...draft, vehicle: v.id }).length])) as Record<string, number>,
-      vehicleAll: filterByScope(all, { ...draft, vehicle: "all" }).length,
     }),
     [all, draft],
   );
@@ -46,7 +41,7 @@ function ScopeSheet({ onClose }: { onClose: () => void }) {
     <Sheet
       open
       onClose={onClose}
-      title="보기 범위"
+      title="보기 기간"
       footer={
         <div className="flex items-center gap-3">
           <button
@@ -75,7 +70,7 @@ function ScopeSheet({ onClose }: { onClose: () => void }) {
         </div>
       }
     >
-      <p className="mb-4 text-[13px] leading-relaxed text-ink-muted">여기서 고른 범위는 요약 · 이벤트 · 분석 · 지도에 모두 똑같이 적용돼요.</p>
+      <p className="mb-4 text-[13px] leading-relaxed text-ink-muted">고른 기간은 요약, 이벤트, 분석, 지도에 똑같이 적용돼요.</p>
 
       <section aria-label="기간">
         <h3 className="mb-2 text-[13px] font-bold text-ink-sub">기간</h3>
@@ -104,36 +99,9 @@ function ScopeSheet({ onClose }: { onClose: () => void }) {
         </p>
       </section>
 
-      <section aria-label="지역" className="mt-6">
-        <h3 className="mb-2 text-[13px] font-bold text-ink-sub">지역</h3>
-        <Segmented
-          label="지역"
-          value={draft.area}
-          onChange={(area) => patch({ area })}
-          options={[
-            { id: "all", label: `전체 ${counts.areaAll}` },
-            ...AREAS.map((a) => ({ id: a.id, label: `${a.label} ${counts.area[a.id]}` })),
-          ]}
-        />
-      </section>
-
-      <section aria-label="차량" className="mt-6">
-        <h3 className="mb-2 text-[13px] font-bold text-ink-sub">차량</h3>
-        <div className="flex flex-wrap gap-2">
-          <Chip active={draft.vehicle === "all"} onClick={() => patch({ vehicle: "all" })} count={counts.vehicleAll}>
-            전체
-          </Chip>
-          {VEHICLES.map((v) => (
-            <Chip key={v.id} active={draft.vehicle === v.id} onClick={() => patch({ vehicle: v.id })} count={counts.vehicle[v.id]}>
-              {v.id}
-            </Chip>
-          ))}
-        </div>
-      </section>
-
       {preview === 0 && (
         <p className="mt-5 flex items-start gap-2 rounded-[16px] bg-[#fff8ec] p-3.5 text-[13px] leading-relaxed text-ink-sub">
-          <CircleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />이 조건에는 기록된 이벤트가 없어요. 기간을 늘리거나 지역·차량을 바꿔 보세요. 칩 옆 숫자는 그 조건을 골랐을 때의 이벤트 수예요.
+          <CircleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />이 기간에는 기록된 이벤트가 없어요. 다른 기간을 골라 보세요. 칩 옆 숫자는 그 기간의 이벤트 수예요.
         </p>
       )}
     </Sheet>
@@ -143,8 +111,6 @@ function ScopeSheet({ onClose }: { onClose: () => void }) {
 export default function ScopeBar() {
   const { scope, range } = useScopeData();
   const [open, setOpen] = useState(false);
-  const areaLabel = AREAS.find((a) => a.id === scope.area)?.label;
-  const extra = [areaLabel, scope.vehicle !== "all" ? scope.vehicle : null].filter(Boolean).join(" · ");
   const modified = !isDefaultScope(scope);
 
   return (
@@ -154,7 +120,7 @@ export default function ScopeBar() {
           type="button"
           onClick={() => setOpen(true)}
           aria-haspopup="dialog"
-          aria-label={`보기 범위 ${periodLabel(scope)} ${rangeText(range)} ${extra}. 눌러서 바꾸기`}
+          aria-label={`보기 기간 ${periodLabel(scope)} ${rangeText(range)}. 눌러서 바꾸기`}
           className="flex min-h-12 min-w-0 flex-1 items-center gap-3 rounded-full border border-line bg-white py-1.5 pr-3.5 pl-4 text-left transition-colors active:bg-surface"
         >
           <CalendarDays className="size-[18px] shrink-0 text-ink-sub" aria-hidden="true" />
@@ -163,7 +129,6 @@ export default function ScopeBar() {
               <span className="text-[14px] font-extrabold whitespace-nowrap">{periodLabel(scope)}</span>
               <span className="num truncate text-[12px] font-medium text-ink-muted">{rangeText(range)}</span>
             </span>
-            {extra && <span className="block truncate text-[12px] font-bold text-ink">{extra}만 보는 중</span>}
           </span>
           <ChevronDown className="size-4 shrink-0 text-ink-muted" aria-hidden="true" />
         </button>
@@ -171,12 +136,13 @@ export default function ScopeBar() {
           <button
             type="button"
             onClick={resetScope}
-            aria-label="보기 범위를 이번 주 전체로 되돌리기"
+            aria-label="보기 기간을 이번 주로 되돌리기"
             className="flex size-12 shrink-0 items-center justify-center rounded-full bg-kakao active:bg-kakao-press"
           >
             <RotateCcw className="size-[18px]" aria-hidden="true" />
           </button>
         )}
+        <VehicleSwitch />
       </div>
       {open && <ScopeSheet onClose={() => setOpen(false)} />}
     </div>
