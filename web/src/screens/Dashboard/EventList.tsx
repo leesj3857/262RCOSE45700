@@ -161,6 +161,7 @@ export default function EventList({ route }: { route: HashRoute }) {
 
   return (
     <>
+      <ScopeBar />
       <PageHeader
         title="이벤트"
         right={
@@ -171,14 +172,13 @@ export default function EventList({ route }: { route: HashRoute }) {
               setPicked([]);
             }}
             aria-pressed={selectMode}
-            className={`flex h-11 items-center gap-1.5 rounded-full px-4 text-[13px] font-bold ${selectMode ? "bg-ink text-white" : "bg-surface text-ink-sub active:bg-line"}`}
+            className={`flex h-11 items-center gap-1.5 rounded-full px-4 text-[13px] font-bold ${selectMode ? "bg-ink text-white" : "bg-white text-ink-sub shadow-card active:bg-surface"}`}
           >
             {selectMode ? <X className="size-4" aria-hidden="true" /> : <ListChecks className="size-4" aria-hidden="true" />}
             {selectMode ? "선택 끝내기" : "여러 개 선택"}
           </button>
         }
       />
-      <ScopeBar />
 
       <div className="flex flex-col gap-3 px-5 pt-4 pb-2">
         <SearchBox value={q} onChange={changeQuery} autoFocus={focusSearch} />

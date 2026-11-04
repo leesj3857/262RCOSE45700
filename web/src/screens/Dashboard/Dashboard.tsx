@@ -76,7 +76,7 @@ export default function Dashboard({ route }: { route: HashRoute }) {
   return (
     <div className="app-shell lg:flex lg:items-center lg:justify-center lg:gap-20 lg:bg-[#e9ebee] lg:p-6">
       <DesktopGuide />
-      <div onScroll={(e) => { e.currentTarget.scrollTop = 0; e.currentTarget.scrollLeft = 0; }} className="app-frame relative mx-auto flex w-full max-w-[430px] flex-col overflow-hidden bg-white lg:mx-0 lg:w-[400px] lg:rounded-[44px] lg:border-[10px] lg:border-ink lg:shadow-[0_30px_80px_rgba(25,25,25,0.25)]">
+      <div onScroll={(e) => { e.currentTarget.scrollTop = 0; e.currentTarget.scrollLeft = 0; }} className="app-frame relative mx-auto flex w-full max-w-[430px] flex-col overflow-hidden bg-page lg:mx-0 lg:w-[400px] lg:rounded-[44px] lg:border-[10px] lg:border-ink lg:shadow-[0_30px_80px_rgba(25,25,25,0.25)]">
         <SheetRootContext.Provider value={sheetRoot}>
           <main ref={scroller} className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {node(route)}

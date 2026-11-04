@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { ArrowRight, Ellipsis, Eye, Lightbulb, ScanText } from "lucide-react";
+import { ArrowRight, Eye, Lightbulb, ScanText } from "lucide-react";
 import type { EventTypeId, IssueEvent } from "@/types/analytics";
 import {
   CAUSE_BY_ID,
@@ -20,7 +20,6 @@ import { showToast } from "@/state/toast";
 import { useScopeData } from "@/state/useScopeData";
 import { prefsStore, restoreRec, setScope } from "@/state/userData";
 import Delta from "./parts/Delta";
-import MoreSheet from "./parts/MoreSheet";
 import PageHeader from "./parts/PageHeader";
 import RecCard from "./parts/RecCard";
 import ScopeBar from "./parts/ScopeBar";
@@ -62,7 +61,7 @@ function TrendChart({ events, rangeStart, rangeEnd }: { events: IssueEvent[]; ra
   const types = [...EVENT_TYPES].reverse();
 
   return (
-    <div className="rounded-panel border border-line bg-white p-5">
+    <div className="rounded-panel bg-white shadow-card p-5">
       <Segmented
         label="막대 표시"
         value={stack}
@@ -171,7 +170,7 @@ function Heatmap({ events }: { events: IssueEvent[] }) {
   const topDay = dayTotals.indexOf(Math.max(...dayTotals));
 
   return (
-    <div className="rounded-panel border border-line bg-white p-5">
+    <div className="rounded-panel bg-white shadow-card p-5">
       <div role="grid" aria-label="요일·시간대별 이벤트 수" className="flex flex-col gap-[3px]">
         <div role="row" className="grid items-end gap-[3px]" style={{ gridTemplateColumns: `22px repeat(${hours.length}, minmax(0, 1fr))` }}>
           <span />
@@ -261,7 +260,6 @@ export default function Analysis({ route }: { route: HashRoute }) {
   const { range, events, baseline, scopedAll } = useScopeData();
   const { dismissedRecs } = prefsStore.use();
   const [showHidden, setShowHidden] = useState(false);
-  const [more, setMore] = useState(false);
   const tab = ALIAS[route.params.get("s") ?? ""] ?? "recs";
 
   const summary = useMemo(() => summarize(events, baseline, range), [events, baseline, range]);
@@ -284,16 +282,8 @@ export default function Analysis({ route }: { route: HashRoute }) {
 
   return (
     <>
-      <PageHeader
-        title="분석"
-        right={
-          <button type="button" onClick={() => setMore(true)} aria-label="더보기와 도움말" className="flex size-11 items-center justify-center rounded-full bg-surface active:bg-line">
-            <Ellipsis className="size-5" aria-hidden="true" />
-          </button>
-        }
-      />
       <ScopeBar />
-      <MoreSheet open={more} onClose={() => setMore(false)} />
+      <PageHeader title="분석" />
 
       <div className="flex flex-col gap-6 px-5 pt-4 pb-12">
         <Segmented label="분석 종류" value={tab} onChange={setTab} options={TABS} />
@@ -349,7 +339,7 @@ export default function Analysis({ route }: { route: HashRoute }) {
                     const diff = p.prevCount === null ? null : p.count - p.prevCount;
                     return (
                       <li key={`${p.zoneId}-${p.cause}`}>
-                        <div className="flex items-center gap-3 rounded-[22px] border border-line bg-white p-4">
+                        <div className="flex items-center gap-3 rounded-[22px] bg-white shadow-card p-4">
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-[16px] font-bold">{ZONE_BY_ID[p.zoneId].name}</p>
                             <p className="mt-0.5 text-[13px] text-ink-muted">{CAUSE_BY_ID[p.cause].label}</p>
@@ -381,7 +371,7 @@ export default function Analysis({ route }: { route: HashRoute }) {
             </Block>
 
             <Block id="cause" title="원인별">
-              <div className="rounded-panel border border-line bg-white p-5">
+              <div className="rounded-panel bg-white shadow-card p-5">
                 <div className="mb-3 flex items-center gap-3 text-[12px] font-semibold text-ink-sub">
                   <span className="inline-flex items-center gap-1.5">
                     <span className="size-2.5 rounded-sm bg-kakao" aria-hidden="true" />
@@ -420,7 +410,7 @@ export default function Analysis({ route }: { route: HashRoute }) {
             </Block>
 
             <Block id="type" title="유형별">
-              <ul className="flex flex-col rounded-panel border border-line bg-white p-2">
+              <ul className="flex flex-col rounded-panel bg-white shadow-card p-2">
                 {summary.byType.map((t) => (
                   <li key={t.id}>
                     <a href={`#${eventsHref({ type: [t.id] })}`} className="flex items-center gap-3 rounded-[18px] px-3 py-3 active:bg-surface">
@@ -439,7 +429,7 @@ export default function Analysis({ route }: { route: HashRoute }) {
             </Block>
 
             <Block id="severity" title="심각도·날씨">
-              <div className="rounded-panel border border-line bg-white p-5">
+              <div className="rounded-panel bg-white shadow-card p-5">
                 <h3 className="text-[15px] font-extrabold">심각도</h3>
                 <div className="mt-3 flex h-4 overflow-hidden rounded-full bg-surface" role="img" aria-label={`높음 ${summary.bySeverity.high}건, 주의 ${summary.bySeverity.mid}건, 낮음 ${summary.bySeverity.low}건`}>
                   <span className="bg-danger" style={{ width: `${total ? (summary.bySeverity.high / total) * 100 : 0}%` }} />
@@ -467,7 +457,7 @@ export default function Analysis({ route }: { route: HashRoute }) {
                 </ul>
               </div>
 
-              <div className="rounded-panel border border-line bg-white p-5">
+              <div className="rounded-panel bg-white shadow-card p-5">
                 <h3 className="text-[15px] font-extrabold">날씨</h3>
                 <ul className="mt-3 flex flex-col gap-2.5">
                   {weather.map((w) => (

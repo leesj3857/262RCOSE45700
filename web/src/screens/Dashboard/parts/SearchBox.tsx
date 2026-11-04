@@ -97,7 +97,7 @@ export default function SearchBox({ value, onChange, autoFocus = false }: Props)
       {showPanel && (
         <div
           onPointerDown={(e) => e.preventDefault()}
-          className="mt-2 flex flex-col gap-4 rounded-[24px] border border-line bg-white p-4 shadow-[0_12px_32px_rgba(25,25,25,0.08)]"
+          className="mt-2 flex flex-col gap-4 rounded-[24px] bg-white shadow-card p-4 shadow-[0_12px_32px_rgba(25,25,25,0.08)]"
         >
           {savedSearches.length > 0 && (
             <section aria-label="저장한 검색" className="flex flex-col gap-1">

@@ -19,7 +19,7 @@ export default function RecCard({ rec, detailed = false }: Props) {
   }
 
   return (
-    <article className="relative flex gap-3 overflow-hidden rounded-[22px] border border-line bg-white p-4 pl-5">
+    <article className="relative flex gap-3 overflow-hidden rounded-[22px] bg-white shadow-card p-4 pl-5">
       <span className={`absolute inset-y-0 left-0 w-1.5 ${BAR[rec.priority]}`} aria-hidden="true" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">

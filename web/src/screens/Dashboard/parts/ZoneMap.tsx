@@ -337,7 +337,7 @@ export default function ZoneMap({
       </svg>
 
       {interactive && (
-        <div className="absolute top-3 right-3 flex flex-col overflow-hidden rounded-[16px] border border-line bg-white shadow-sm">
+        <div className="absolute top-3 right-3 flex flex-col overflow-hidden rounded-[16px] bg-white shadow-card shadow-sm">
           <button
             type="button"
             aria-label="확대"

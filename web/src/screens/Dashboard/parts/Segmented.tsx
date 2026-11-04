@@ -10,7 +10,7 @@ type Props<T extends string> = {
 
 export default function Segmented<T extends string>({ options, value, onChange, label, className = "" }: Props<T>) {
   return (
-    <div role="radiogroup" aria-label={label} className={`flex rounded-full bg-surface p-1 ${className}`}>
+    <div role="radiogroup" aria-label={label} className={`flex rounded-full bg-black/[0.06] p-1 ${className}`}>
       {options.map((o) => {
         const on = o.id === value;
         return (

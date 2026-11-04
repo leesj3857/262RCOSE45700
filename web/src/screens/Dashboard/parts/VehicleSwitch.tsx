@@ -23,7 +23,7 @@ export default function VehicleSwitch() {
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-label={`현재 차량 ${current.id}. 눌러서 다른 차량 보기`}
-        className="flex h-12 shrink-0 items-center gap-1.5 rounded-full bg-ink pr-3 pl-3.5 text-white transition-colors active:bg-ink/80"
+        className="flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-ink pr-3 pl-3.5 text-white transition-colors active:bg-ink/80"
       >
         <Car className="size-[18px]" aria-hidden="true" />
         <span className="num text-[13px] font-extrabold">{current.id}</span>

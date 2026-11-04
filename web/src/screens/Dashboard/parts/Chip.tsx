@@ -16,7 +16,7 @@ export default function Chip({ active, onClick, children, count, tone = "ink" }:
       onClick={onClick}
       aria-pressed={active}
       className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 text-[14px] font-bold transition-colors ${
-        active ? on : "bg-surface text-ink-sub active:bg-line"
+        active ? on : "border border-line bg-white text-ink-sub active:bg-surface"
       }`}
     >
       {children}

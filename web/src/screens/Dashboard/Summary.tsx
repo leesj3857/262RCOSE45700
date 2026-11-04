@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { ArrowRight, ChevronRight, CircleCheck, Ellipsis, Inbox, Mic } from "lucide-react";
+import { useMemo } from "react";
+import { ArrowRight, ChevronRight, CircleCheck, Inbox, Mic } from "lucide-react";
 import { summarize } from "@/lib/analytics";
 import { buildRecommendations } from "@/lib/recommendations";
 import { eventsHref } from "@/lib/filters";
@@ -8,7 +8,6 @@ import { navigate } from "@/lib/useHashRoute";
 import { prefsStore } from "@/state/userData";
 import { useScopeData } from "@/state/useScopeData";
 import EmptyState from "./parts/EmptyState";
-import MoreSheet from "./parts/MoreSheet";
 import PageHeader from "./parts/PageHeader";
 import RecCard from "./parts/RecCard";
 import ScopeBar from "./parts/ScopeBar";
@@ -17,7 +16,6 @@ type Todo = { key: string; count: number; title: string; href: string; tone: "da
 
 export default function Summary() {
   const { scope, range, events, baseline, scopedAll } = useScopeData();
-  const [more, setMore] = useState(false);
   const { dismissedRecs } = prefsStore.use();
 
   const summary = useMemo(() => summarize(events, baseline, range), [events, baseline, range]);
@@ -37,21 +35,21 @@ export default function Summary() {
     {
       key: "severe",
       count: severePending,
-      title: `사고 ${severePending}건 확인하기`,
+      title: "사고",
       href: eventsHref({ sev: ["high"], st: ["new", "flagged"], sort: "severity" }),
       tone: "danger" as const,
     },
     {
       key: "new",
       count: summary.byStatus.new,
-      title: `미검토 ${summary.byStatus.new}건 검토하기`,
+      title: "미검토",
       href: eventsHref({ st: ["new"], sort: "oldest" }),
       tone: "ink" as const,
     },
     {
       key: "check",
       count: summary.checkCount,
-      title: `비어 있는 항목 ${summary.checkCount}건 채우기`,
+      title: "확인 필요",
       href: eventsHref({ check: true, sort: "check" }),
       tone: "ink" as const,
     },
@@ -63,24 +61,18 @@ export default function Summary() {
 
   return (
     <>
+      <ScopeBar />
       <PageHeader
         title="요약"
         right={
-          <div className="flex items-center gap-2">
-            <a href="#/" aria-label="녹음 화면으로" className="flex h-11 items-center gap-1.5 rounded-full bg-surface px-3.5 text-[13px] font-bold text-ink-sub active:bg-line">
+          <a href="#/" aria-label="녹음 화면으로" className="flex h-11 items-center gap-1.5 rounded-full bg-white px-4 text-[13px] font-bold text-ink-sub shadow-card active:bg-surface">
               <Mic className="size-4" aria-hidden="true" />
               녹음
             </a>
-            <button type="button" onClick={() => setMore(true)} aria-label="더보기와 도움말" className="flex size-11 items-center justify-center rounded-full bg-surface active:bg-line">
-              <Ellipsis className="size-5" aria-hidden="true" />
-            </button>
-          </div>
         }
       />
-      <ScopeBar />
-      <MoreSheet open={more} onClose={() => setMore(false)} />
 
-      <div className="flex flex-col gap-7 px-5 pt-5 pb-10">
+      <div className="flex flex-col gap-6 px-5 pt-1 pb-8">
         {total === 0 ? (
           <EmptyState icon={<Inbox className="size-6" aria-hidden="true" />} title="기록이 없어요" description="기간이나 차량을 바꿔 보세요" />
         ) : (
@@ -134,7 +126,7 @@ export default function Summary() {
 
             <section aria-label="유형별" className="flex flex-col gap-3">
               <h2 className="px-1 text-[18px] font-extrabold tracking-tight">유형별</h2>
-              <ul className="flex flex-col rounded-panel border border-line bg-white p-2">
+              <ul className="flex flex-col rounded-panel bg-white shadow-card p-2">
                 {typeRows.map((t) => (
                   <li key={t.id}>
                     <a href={`#${eventsHref({ type: [t.id] })}`} className="flex items-center gap-3 rounded-[20px] px-4 py-3 active:bg-surface">
@@ -157,7 +149,7 @@ export default function Summary() {
                   <ArrowRight className="size-3.5" aria-hidden="true" />
                 </a>
               </div>
-              <ul className="flex flex-col rounded-panel border border-line bg-white p-2">
+              <ul className="flex flex-col rounded-panel bg-white shadow-card p-2">
                 {causeRows.map((c) => (
                   <li key={c.id}>
                     <a href={`#${eventsHref({ cause: [c.id] })}`} className="flex items-center gap-3 rounded-[20px] px-4 py-3 active:bg-surface">
@@ -177,33 +169,29 @@ export default function Summary() {
                   검토 {reviewed}/{total}건
                 </span>
               </div>
-              <div className="flex h-2.5 overflow-hidden rounded-full bg-surface" role="img" aria-label={`전체 ${total}건 중 ${reviewed}건 검토 완료`}>
-                <span className="bg-ok" style={{ width: `${(reviewed / total) * 100}%` }} />
-                <span className="bg-warning" style={{ width: `${(summary.byStatus.flagged / total) * 100}%` }} />
+              <div className="rounded-panel bg-white p-5 shadow-card">
+                <div className="flex h-2 overflow-hidden rounded-full bg-surface" role="img" aria-label={`전체 ${total}건 중 ${reviewed}건 검토 완료`}>
+                  <span className="bg-ok" style={{ width: `${(reviewed / total) * 100}%` }} />
+                  <span className="bg-warning" style={{ width: `${(summary.byStatus.flagged / total) * 100}%` }} />
+                </div>
+                {todos.length === 0 ? (
+                  <p className="mt-4 flex items-center justify-center gap-2 text-[14px] font-bold text-[#0f7a42]">
+                    <CircleCheck className="size-5" aria-hidden="true" />
+                    모두 검토했어요
+                  </p>
+                ) : (
+                  <ul className="mt-4 grid grid-flow-col auto-cols-fr divide-x divide-line">
+                    {todos.map((t) => (
+                      <li key={t.key}>
+                        <a href={`#${t.href}`} className="flex flex-col items-center gap-1 rounded-[16px] py-2 active:bg-surface">
+                          <span className={`num text-[30px] leading-none font-extrabold ${t.tone === "danger" ? "text-danger" : ""}`}>{t.count}</span>
+                          <span className="text-[13px] font-semibold text-ink-sub">{t.title}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-              {todos.length === 0 ? (
-                <p className="flex items-center justify-center gap-2 rounded-[22px] bg-[#e6f6ed] py-4 text-[14px] font-bold text-[#0f7a42]">
-                  <CircleCheck className="size-5" aria-hidden="true" />
-                  모두 검토했어요
-                </p>
-              ) : (
-                <ul className="flex flex-col gap-2">
-                  {todos.map((t) => (
-                    <li key={t.key}>
-                      <a
-                        href={`#${t.href}`}
-                        className={`flex items-center gap-4 rounded-[22px] border p-4 transition-colors active:bg-surface ${t.tone === "danger" ? "border-danger/30 bg-danger/5" : "border-line bg-white"}`}
-                      >
-                        <span className={`num flex size-11 shrink-0 items-center justify-center rounded-full text-[17px] font-extrabold ${t.tone === "danger" ? "bg-danger text-white" : "bg-ink text-white"}`}>{t.count}</span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-[16px] font-extrabold">{t.title}</span>
-                        </span>
-                        <ChevronRight className="size-5 shrink-0 text-ink-muted" aria-hidden="true" />
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </section>
 
             {recs.length > 0 && (

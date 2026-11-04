@@ -93,8 +93,8 @@ export default function MapView({ route }: { route: HashRoute }) {
 
   return (
     <>
-      <PageHeader title="지도" />
       <ScopeBar />
+      <PageHeader title="지도" />
 
       <div className="flex flex-col gap-3 px-5 pt-4 pb-10">
         <Segmented label="지역" value={area} onChange={pickArea} options={AREAS.map((a) => ({ id: a.id, label: a.label }))} />
@@ -229,7 +229,7 @@ export default function MapView({ route }: { route: HashRoute }) {
           <h2 className="px-1 text-[18px] font-extrabold tracking-tight">
             {AREAS.find((a) => a.id === area)?.label} 구간 순위
           </h2>
-          <ul className="flex flex-col rounded-panel border border-line bg-white p-2">
+          <ul className="flex flex-col rounded-panel bg-white shadow-card p-2">
             {ranking.map(({ zone: z, n }, i) => {
               const on = z.id === selectedZone;
               return (

@@ -39,7 +39,7 @@ import ZoneMap from "./parts/ZoneMap";
 
 function Section({ icon, title, note, children }: { icon: ReactNode; title: string; note?: ReactNode; children: ReactNode }) {
   return (
-    <section aria-label={title} className="rounded-panel border border-line bg-white p-5">
+    <section aria-label={title} className="rounded-panel bg-white shadow-card p-5">
       <div className="mb-4 flex items-center gap-2">
         <span className="flex size-8 items-center justify-center rounded-[10px] bg-surface text-ink-sub">{icon}</span>
         <h2 className="text-[16px] font-extrabold">{title}</h2>
@@ -230,7 +230,7 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
           </div>
         </section>
 
-        <section aria-label="검토 상태" className="rounded-panel border border-line bg-white p-4">
+        <section aria-label="검토 상태" className="rounded-panel bg-white shadow-card p-4">
           <p className="mb-2 px-1 text-[13px] font-bold text-ink-muted">검토 상태</p>
           <div role="radiogroup" aria-label="검토 상태" className="grid grid-cols-3 gap-1.5 rounded-full bg-surface p-1">
             {STATUS_OPTIONS.map((s) => {
@@ -324,7 +324,7 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
           )}
         </Section>
 
-        <section aria-label="자동 처리 내역" className="rounded-panel border border-line bg-white">
+        <section aria-label="자동 처리 내역" className="rounded-panel bg-white shadow-card">
           <button
             type="button"
             onClick={() => setProcOpen((v) => !v)}
@@ -366,7 +366,7 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
           )}
         </section>
 
-        <section aria-label="차량 로그" className="rounded-panel border border-line bg-white">
+        <section aria-label="차량 로그" className="rounded-panel bg-white shadow-card">
           <button type="button" onClick={() => setLogOpen((v) => !v)} aria-expanded={logOpen} className="flex w-full items-center gap-2 p-5 text-left">
             <span className="flex size-8 items-center justify-center rounded-[10px] bg-surface text-ink-sub">
               <Activity className="size-4" aria-hidden="true" />
@@ -415,7 +415,7 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
             rows={3}
             maxLength={300}
             placeholder="메모를 입력하세요"
-            className="w-full resize-none rounded-[16px] border border-line bg-white p-3.5 text-[15px] leading-relaxed outline-none placeholder:text-ink-muted focus:border-ink"
+            className="w-full resize-none rounded-[16px] bg-white shadow-card p-3.5 text-[15px] leading-relaxed outline-none placeholder:text-ink-muted focus:border-ink"
           />
           <p className="num mt-1.5 text-right text-[12px] text-ink-muted">{note.length}/300</p>
         </Section>
