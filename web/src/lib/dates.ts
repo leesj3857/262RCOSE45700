@@ -64,6 +64,13 @@ export function rangeText(range: DateRange): string {
   return `${y1}.${m1}.${d1} ~ ${y2 === y1 ? "" : `${y2}.`}${m2}.${d2}`;
 }
 
+export function shortRangeText(range: DateRange): string {
+  const [, m1, d1] = range.start.split("-");
+  const [, m2, d2] = range.end.split("-");
+  if (range.start === range.end) return `${m1}.${d1}`;
+  return `${m1}.${d1} ~ ${m2}.${d2}`;
+}
+
 export function clockOf(iso: string): string {
   const d = kst(iso);
   return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;

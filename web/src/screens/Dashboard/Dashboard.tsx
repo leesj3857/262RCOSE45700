@@ -25,7 +25,7 @@ const sample = EVENTS_THIS_WEEK.find((e) => e.transcript.startsWith("삼거리�
 
 const FLOW = [
   { label: "한 주를 한눈에 파악", href: "/admin" },
-  { label: "추천 조치 확인", href: "/admin/analysis?s=recs" },
+  { label: "반복 패턴 확인", href: "/admin/analysis?s=recs" },
   { label: "미검토 이벤트 필터링", href: "/admin/events?st=new&sort=oldest" },
   { label: "상세에서 근거 확인·수정", href: `/admin/events/${sample.id}` },
   { label: "지도에서 반복 구간 보기", href: "/admin/map?zone=gn-2" },

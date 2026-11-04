@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { CalendarDays, ChevronDown, CircleAlert, RotateCcw } from "lucide-react";
-import { daysIn, rangeText } from "@/lib/dates";
+import { daysIn, rangeText, shortRangeText } from "@/lib/dates";
 import { DEFAULT_SCOPE, PERIODS, isDefaultScope, periodLabel, resolveRange, type PeriodId, type Scope } from "@/lib/scope";
 import { DATA_END, DATA_START } from "@/mockData/events";
 import { filterByScope, useAllEvents, useScopeData } from "@/state/useScopeData";
@@ -126,7 +126,7 @@ export default function ScopeBar() {
           <span className="min-w-0 flex-1">
             <span className="flex items-baseline gap-2">
               <span className="text-[14px] font-extrabold whitespace-nowrap">{periodLabel(scope)}</span>
-              <span className="num truncate text-[12px] font-medium text-ink-muted">{rangeText(range)}</span>
+              <span className="num truncate text-[12px] font-medium text-ink-muted">{shortRangeText(range)}</span>
             </span>
           </span>
           <ChevronDown className="size-4 shrink-0 text-ink-muted" aria-hidden="true" />

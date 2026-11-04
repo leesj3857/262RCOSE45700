@@ -160,4 +160,4 @@ export function buildRecommendations(input: {
   return recs.sort((a, b) => PRIORITY_RANK[b.priority] - PRIORITY_RANK[a.priority] || b.weight - a.weight).slice(0, 8);
 }
 
-export const PRIORITY_LABEL: Record<Priority, string> = { high: "우선 조치", mid: "검토 권장", low: "참고" };
+export const PRIORITY_LABEL: Record<Priority, string> = { high: "우선 검토", mid: "검토 권장", low: "참고" };

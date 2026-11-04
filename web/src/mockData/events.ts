@@ -222,7 +222,7 @@ function buildEvent(
     severity,
     status: statusFor(weekIdx, severity, rng),
     weather,
-    title: `${zone.spot}에서 ${variant.title} 인한 ${typeLabel}`,
+    title: !hasCause ? `${zone.spot}에서 원인 미확인 ${typeLabel}` : variant.noun.includes(zone.spot) ? `${variant.title} 인한 ${typeLabel}` : `${zone.spot}에서 ${variant.title} 인한 ${typeLabel}`,
     transcript,
     fields,
     audioSec: 6 + Math.floor(rng() * 13),

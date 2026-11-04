@@ -15,7 +15,7 @@ type Props = {
 export default function RecCard({ rec, detailed = false }: Props) {
   function dismiss() {
     dismissRec(rec.id);
-    showToast("추천을 숨겼어요", { label: "되돌리기", run: () => restoreRec(rec.id) });
+    showToast("패턴을 숨겼어요", { label: "되돌리기", run: () => restoreRec(rec.id) });
   }
 
   return (
@@ -29,7 +29,7 @@ export default function RecCard({ rec, detailed = false }: Props) {
           <button
             type="button"
             onClick={dismiss}
-            aria-label="이 추천 숨기기"
+            aria-label="이 패턴 숨기기"
             className="-mt-1 -mr-1 flex size-10 items-center justify-center rounded-full text-ink-muted active:bg-surface"
           >
             <X className="size-4" aria-hidden="true" />

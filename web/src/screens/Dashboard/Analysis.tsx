@@ -249,7 +249,7 @@ function Heatmap({ events }: { events: IssueEvent[] }) {
 type Tab = "recs" | "trend" | "cause" | "quality";
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "recs", label: "추천" },
+  { id: "recs", label: "패턴" },
   { id: "trend", label: "추이·시간" },
   { id: "cause", label: "원인·구간" },
   { id: "quality", label: "기록 품질" },
@@ -299,7 +299,7 @@ export default function Analysis({ route }: { route: HashRoute }) {
         <Segmented label="분석 종류" value={tab} onChange={setTab} options={TABS} />
 
         {tab === "recs" && (
-          <Block id="recs" title="추천 조치">
+          <Block id="recs" title="반복 패턴">
             {recs.length === 0 ? (
               <div className="flex items-center gap-3 rounded-[22px] bg-surface p-4 text-[14px] text-ink-sub">
                 <Lightbulb className="size-5 shrink-0" aria-hidden="true" />
@@ -311,7 +311,7 @@ export default function Analysis({ route }: { route: HashRoute }) {
             {hidden.length > 0 && (
               <div className="flex flex-col gap-2">
                 <button type="button" onClick={() => setShowHidden((v) => !v)} className="h-11 self-start rounded-full px-3 text-[13px] font-bold text-ink-sub active:bg-surface">
-                  숨긴 추천 {hidden.length}건 {showHidden ? "접기" : "보기"}
+                  숨긴 패턴 {hidden.length}건 {showHidden ? "접기" : "보기"}
                 </button>
                 {showHidden &&
                   hidden.map((r) => (
@@ -514,10 +514,6 @@ export default function Analysis({ route }: { route: HashRoute }) {
           </>
         )}
 
-        <a href="#/admin/events" className="flex h-12 items-center justify-center gap-2 rounded-full bg-surface text-[14px] font-bold text-ink-sub active:bg-line">
-          이벤트 목록에서 직접 찾아보기
-          <ArrowRight className="size-4" aria-hidden="true" />
-        </a>
       </div>
     </>
   );
