@@ -49,6 +49,7 @@ export default function EventList({ route }: { route: HashRoute }) {
   const [limit, setLimit] = useState(PAGE);
   const timer = useRef<number | null>(null);
   const committed = useRef(url.q);
+  const sentinel = useRef<HTMLDivElement>(null);
   const focusSearch = route.params.get("focus") === "1";
 
   const params: ListParams = { filters, q, ex };
@@ -76,6 +77,20 @@ export default function EventList({ route }: { route: HashRoute }) {
     },
     [],
   );
+
+  const more = list.length > limit;
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el || !more) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setLimit((l) => l + PAGE);
+      },
+      { rootMargin: "500px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [more, limit]);
 
   const counts = useMemo(
     () => ({
@@ -338,10 +353,17 @@ export default function EventList({ route }: { route: HashRoute }) {
           </section>
         ))}
 
-        {list.length > limit && (
-          <button type="button" onClick={() => setLimit((l) => l + PAGE)} className="h-12 rounded-full border border-line text-[14px] font-bold active:bg-surface">
-            <span className="num">{list.length - limit}</span>건 더 보기
-          </button>
+        {more && (
+          <div ref={sentinel} className="flex flex-col items-center gap-2 py-2">
+            <button type="button" onClick={() => setLimit((l) => l + PAGE)} className="h-12 w-full rounded-full border border-line text-[14px] font-bold active:bg-surface">
+              <span className="num">{list.length - limit}</span>건 더 보기
+            </button>
+          </div>
+        )}
+        {!more && list.length > 0 && (
+          <p className="py-4 text-center text-[13px] font-semibold text-ink-muted">
+            마지막 이벤트예요 · 총 <span className="num">{list.length}</span>건
+          </p>
         )}
       </div>
 

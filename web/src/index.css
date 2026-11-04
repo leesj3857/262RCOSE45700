@@ -170,3 +170,20 @@ input:focus-visible,
 textarea:focus-visible {
   outline: none;
 }
+
+.app-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.app-frame {
+  height: 100vh;
+  height: 100dvh;
+}
+
+@media (min-width: 1024px) {
+  .app-frame {
+    height: min(880px, calc(100vh - 48px));
+    height: min(880px, calc(100dvh - 48px));
+  }
+}
