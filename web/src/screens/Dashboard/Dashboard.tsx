@@ -1,23 +1,77 @@
-import { useEffect, useRef, type ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
+import { ArrowRight, Mic } from "lucide-react";
 import type { HashRoute } from "@/lib/useHashRoute";
+import { EVENTS_THIS_WEEK } from "@/mockData/events";
+import Analysis from "./Analysis";
 import EventDetail from "./EventDetail";
 import EventList from "./EventList";
 import MapView from "./MapView";
 import Search from "./Search";
 import Summary from "./Summary";
 import TabBar, { type TabId } from "./TabBar";
+import { SheetRootContext } from "./parts/Sheet";
+import ToastHost from "./parts/ToastHost";
 
 function resolve(path: string): { tab: TabId; node: (route: HashRoute) => ReactElement } {
   const detail = path.match(/^\/admin\/events\/([^/]+)$/);
-  if (detail) return { tab: "events", node: () => <EventDetail key={detail[1]} id={detail[1]} /> };
+  if (detail) return { tab: "events", node: (route) => <EventDetail key={detail[1]} id={detail[1]} route={route} /> };
   if (path === "/admin/events") return { tab: "events", node: (route) => <EventList route={route} /> };
-  if (path === "/admin/search") return { tab: "search", node: () => <Search /> };
-  if (path === "/admin/map") return { tab: "map", node: () => <MapView /> };
+  if (path === "/admin/analysis") return { tab: "analysis", node: (route) => <Analysis route={route} /> };
+  if (path === "/admin/search") return { tab: "search", node: (route) => <Search route={route} /> };
+  if (path === "/admin/map") return { tab: "map", node: (route) => <MapView route={route} /> };
   return { tab: "summary", node: () => <Summary /> };
 }
 
+const sample = EVENTS_THIS_WEEK.find((e) => e.transcript.startsWith("삼거리에서")) ?? EVENTS_THIS_WEEK[0];
+
+const FLOW = [
+  { label: "한 주를 한눈에 파악", href: "/admin" },
+  { label: "추천 조치 확인", href: "/admin/analysis?s=recs" },
+  { label: "미검토 이벤트 필터링", href: "/admin/events?st=new&sort=oldest" },
+  { label: "상세에서 근거 확인·수정", href: `/admin/events/${sample.id}` },
+  { label: "지도에서 반복 구간 보기", href: "/admin/map?zone=gn-2" },
+  { label: "자연어로 검색", href: "/admin/search" },
+];
+
+function DesktopGuide() {
+  return (
+    <aside className="hidden w-[340px] shrink-0 flex-col gap-8 lg:flex">
+      <div>
+        <p className="text-[12px] font-bold tracking-[0.1em] text-ink-sub uppercase">Kakao Mobility × Korea University</p>
+        <p className="mt-3 text-[34px] leading-tight font-extrabold tracking-tight">
+          주행 이슈
+          <br />
+          분석 앱
+        </p>
+        <p className="mt-3 text-[15px] leading-relaxed text-ink-sub">
+          오퍼레이터가 음성으로 남긴 기록을 모아 운영 관리자가 반복 패턴을 찾고 조치할 수 있게 돕는 화면 시안이에요.
+        </p>
+      </div>
+      <ol className="flex flex-col gap-1">
+        {FLOW.map((f, i) => (
+          <li key={f.href}>
+            <a href={`#${f.href}`} className="group flex items-center gap-3 rounded-[16px] px-3 py-2.5 transition-colors hover:bg-white">
+              <span className="num flex size-7 shrink-0 items-center justify-center rounded-full bg-ink text-[13px] font-extrabold text-white">{i + 1}</span>
+              <span className="text-[15px] font-bold">{f.label}</span>
+              <ArrowRight className="ml-auto size-4 opacity-0 transition-opacity group-hover:opacity-60" aria-hidden="true" />
+            </a>
+          </li>
+        ))}
+      </ol>
+      <div className="flex flex-col gap-2">
+        <a href="#/" className="inline-flex h-12 items-center gap-2 self-start rounded-full bg-kakao px-5 text-[14px] font-extrabold">
+          <Mic className="size-4" aria-hidden="true" />
+          오퍼레이터 녹음 화면 보기
+        </a>
+        <p className="text-[12px] leading-relaxed text-ink-sub">예시 데이터로 구성한 화면이에요. 검토 상태·메모·수정 내용은 이 브라우저에만 저장돼요.</p>
+      </div>
+    </aside>
+  );
+}
+
 export default function Dashboard({ route }: { route: HashRoute }) {
-  const scroller = useRef<HTMLDivElement>(null);
+  const scroller = useRef<HTMLElement>(null);
+  const [sheetRoot, setSheetRoot] = useState<HTMLElement | null>(null);
   const { tab, node } = resolve(route.path);
 
   useEffect(() => {
@@ -25,11 +79,18 @@ export default function Dashboard({ route }: { route: HashRoute }) {
   }, [route.path]);
 
   return (
-    <div className="app-frame mx-auto flex h-dvh w-full max-w-[430px] flex-col bg-white">
-      <main ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
-        {node(route)}
-      </main>
-      <TabBar active={tab} />
+    <div className="min-h-dvh lg:flex lg:items-center lg:justify-center lg:gap-20 lg:bg-[#e9ebee] lg:p-6">
+      <DesktopGuide />
+      <div className="app-frame relative mx-auto flex h-dvh w-full max-w-[430px] flex-col overflow-hidden bg-white lg:mx-0 lg:h-[min(880px,calc(100dvh-48px))] lg:w-[400px] lg:rounded-[44px] lg:border-[10px] lg:border-ink lg:shadow-[0_30px_80px_rgba(25,25,25,0.25)]">
+        <SheetRootContext.Provider value={sheetRoot}>
+          <main ref={scroller} className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            {node(route)}
+          </main>
+          <TabBar active={tab} />
+          <div ref={setSheetRoot} className="pointer-events-none absolute inset-0 z-40" />
+          <ToastHost />
+        </SheetRootContext.Provider>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,557 @@
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { ArrowRight, ChartNoAxesColumn, Copy, Download, Eye, Lightbulb } from "lucide-react";
+import type { EventTypeId, IssueEvent } from "@/types/analytics";
+import {
+  CAUSE_BY_ID,
+  fleetRate,
+  hourMatrix,
+  pctChange,
+  summarize,
+  topWindow,
+  vehicleStats,
+  weeklySeries,
+  zoneCauseSeries,
+} from "@/lib/analytics";
+import { buildRecommendations } from "@/lib/recommendations";
+import { dayOf, weekdayLabel } from "@/lib/dates";
+import { copyText, downloadText, eventsToCsv, summaryText } from "@/lib/exporters";
+import { eventsHref } from "@/lib/filters";
+import { baselineName, periodLabel } from "@/lib/scope";
+import { navigate, type HashRoute } from "@/lib/useHashRoute";
+import { ZONE_BY_ID } from "@/lib/zones";
+import { AREAS, CAUSES, EVENT_TYPES, HOUR_MAX, HOUR_MIN, OPERATORS, TYPE_COLORS } from "@/mockData/taxonomy";
+import { showToast } from "@/state/toast";
+import { useScopeData } from "@/state/useScopeData";
+import { prefsStore, restoreRec, setScope } from "@/state/userData";
+import Delta from "./parts/Delta";
+import PageHeader from "./parts/PageHeader";
+import RecCard from "./parts/RecCard";
+import ScopeBar from "./parts/ScopeBar";
+import Segmented from "./parts/Segmented";
+import Sparkline from "./parts/Sparkline";
+
+const JUMPS = [
+  { id: "recs", label: "추천 조치" },
+  { id: "trend", label: "주간 추이" },
+  { id: "time", label: "시간대" },
+  { id: "patterns", label: "반복 구간" },
+  { id: "cause", label: "원인·심각도" },
+  { id: "vehicle", label: "차량" },
+] as const;
+
+function Block({ id, title, note, children }: { id: string; title: string; note?: string; children: ReactNode }) {
+  return (
+    <section id={`sec-${id}`} aria-label={title} className="scroll-mt-20 flex flex-col gap-3">
+      <div className="px-1">
+        <h2 className="text-[18px] font-extrabold tracking-tight">{title}</h2>
+        {note && <p className="mt-0.5 text-[12px] leading-relaxed text-ink-muted">{note}</p>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+const HEAT = ["#f5f6f8", "#fff6b3", "#ffee66", "#fee500", "#ffb400", "#ff7a00"];
+
+function heatColor(v: number, max: number): string {
+  if (v === 0 || max === 0) return HEAT[0];
+  const r = v / max;
+  return HEAT[r < 0.2 ? 1 : r < 0.4 ? 2 : r < 0.6 ? 3 : r < 0.8 ? 4 : 5];
+}
+
+function TrendChart({ events, rangeStart, rangeEnd }: { events: IssueEvent[]; rangeStart: string; rangeEnd: string }) {
+  const series = useMemo(() => weeklySeries(events), [events]);
+  const [stack, setStack] = useState<"total" | "type">("type");
+  const [picked, setPicked] = useState(series.length - 1);
+  const W = 340;
+  const H = 200;
+  const pad = { l: 26, r: 6, t: 20, b: 28 };
+  const max = Math.max(1, ...series.map((s) => s.total));
+  const yMax = Math.ceil(max / 20) * 20;
+  const bw = (W - pad.l - pad.r) / series.length;
+  const y = (v: number) => pad.t + (1 - v / yMax) * (H - pad.t - pad.b);
+  const cur = series[picked];
+  const types = [...EVENT_TYPES].reverse();
+
+  return (
+    <div className="rounded-panel border border-line bg-white p-5">
+      <Segmented
+        label="막대 표시"
+        value={stack}
+        onChange={setStack}
+        options={[
+          { id: "type", label: "유형별" },
+          { id: "total", label: "전체" },
+        ]}
+      />
+      <svg viewBox={`0 0 ${W} ${H}`} className="mt-4 w-full" role="img" aria-label="최근 8주 주간 이벤트 추이">
+        {[0, 0.5, 1].map((t) => (
+          <g key={t}>
+            <line x1={pad.l} x2={W - pad.r} y1={y(yMax * t)} y2={y(yMax * t)} stroke="#e8eaed" strokeWidth={1} />
+            <text x={pad.l - 5} y={y(yMax * t) + 3.5} textAnchor="end" fontSize="10" fill="#6b7280" className="num">
+              {Math.round(yMax * t)}
+            </text>
+          </g>
+        ))}
+        {series.map((s, i) => {
+          const x = pad.l + i * bw + bw * 0.16;
+          const w = bw * 0.68;
+          const inRange = s.range.end >= rangeStart && s.range.start <= rangeEnd;
+          let acc = 0;
+          return (
+            <g
+              key={s.index}
+              role="button"
+              tabIndex={0}
+              aria-label={`${s.label} 주 ${s.total}건`}
+              aria-pressed={picked === i}
+              onClick={() => setPicked(i)}
+              onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setPicked(i)}
+              className="cursor-pointer outline-none"
+            >
+              <rect x={pad.l + i * bw} y={pad.t - 14} width={bw} height={H - pad.t - pad.b + 14} fill={picked === i ? "#fff9c4" : "transparent"} rx={8} />
+              {stack === "total" ? (
+                <rect x={x} y={y(s.total)} width={w} height={y(0) - y(s.total)} rx={5} fill={inRange ? "#1a2030" : "#c9ced6"} />
+              ) : (
+                types.map((t) => {
+                  const v = s.byType[t.id];
+                  if (!v) return null;
+                  const top = y(acc + v);
+                  const h = y(acc) - top;
+                  acc += v;
+                  return <rect key={t.id} x={x} y={top} width={w} height={h} fill={TYPE_COLORS[t.id]} opacity={inRange ? 1 : 0.45} stroke="#fff" strokeWidth={0.8} />;
+                })
+              )}
+              <text x={x + w / 2} y={y(s.total) - 5} textAnchor="middle" fontSize="10" fontWeight={picked === i ? 800 : 600} fill={picked === i ? "#191919" : "#6b7280"} className="num">
+                {s.total}
+              </text>
+              <text x={x + w / 2} y={H - 10} textAnchor="middle" fontSize="10" fill="#6b7280" className="num">
+                {s.label}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+
+      {stack === "type" && (
+        <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5">
+          {EVENT_TYPES.map((t) => (
+            <li key={t.id} className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-ink-sub">
+              <span className="size-2.5 rounded-sm border border-ink/10" style={{ background: TYPE_COLORS[t.id as EventTypeId] }} aria-hidden="true" />
+              {t.label}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-4 rounded-[18px] bg-surface p-4">
+        <div className="flex items-center justify-between gap-2">
+          <p className="num text-[14px] font-extrabold">
+            {cur.range.start.slice(5).replace("-", ".")} ~ {cur.range.end.slice(5).replace("-", ".")}
+          </p>
+          <p className="num text-[20px] font-extrabold">
+            {cur.total}
+            <span className="ml-0.5 text-[13px] font-bold">건</span>
+          </p>
+        </div>
+        <div className="mt-1 flex items-center justify-between">
+          <span className="text-[12px] text-ink-muted">직전 주 대비</span>
+          <Delta pct={picked > 0 ? pctChange(cur.total, series[picked - 1].total) : null} />
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setScope({ period: "custom", from: cur.range.start, to: cur.range.end });
+            showToast("이 주로 보기 범위를 바꿨어요");
+          }}
+          className="mt-3 flex h-11 w-full items-center justify-center gap-1.5 rounded-full bg-white text-[13px] font-bold shadow-sm active:bg-line"
+        >
+          <Eye className="size-4" aria-hidden="true" />이 주만 보기
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Heatmap({ events }: { events: IssueEvent[] }) {
+  const matrix = useMemo(() => hourMatrix(events), [events]);
+  const max = Math.max(0, ...matrix.flat());
+  const [cell, setCell] = useState<{ d: number; h: number } | null>(null);
+  const hours = Array.from({ length: HOUR_MAX - HOUR_MIN + 1 }, (_, i) => HOUR_MIN + i);
+  const win = topWindow(matrix, 3);
+  const dayTotals = matrix.map((row) => row.reduce((a, b) => a + b, 0));
+  const topDay = dayTotals.indexOf(Math.max(...dayTotals));
+
+  return (
+    <div className="rounded-panel border border-line bg-white p-5">
+      <div role="grid" aria-label="요일·시간대별 이벤트 수" className="flex flex-col gap-[3px]">
+        <div role="row" className="grid items-end gap-[3px]" style={{ gridTemplateColumns: `22px repeat(${hours.length}, minmax(0, 1fr))` }}>
+          <span />
+          {hours.map((h) => (
+            <span key={h} role="columnheader" className="num text-center text-[10px] text-ink-muted">
+              {h % 2 === 0 ? h : ""}
+            </span>
+          ))}
+        </div>
+        {matrix.map((row, d) => (
+          <div key={d} role="row" className="grid items-center gap-[3px]" style={{ gridTemplateColumns: `22px repeat(${hours.length}, minmax(0, 1fr))` }}>
+            <span role="rowheader" className="text-[11px] font-bold text-ink-sub">
+              {weekdayLabel(d)}
+            </span>
+            {hours.map((h) => {
+              const v = row[h];
+              const on = cell?.d === d && cell.h === h;
+              return (
+                <button
+                  key={h}
+                  type="button"
+                  role="gridcell"
+                  aria-label={`${weekdayLabel(d)}요일 ${h}시 ${v}건`}
+                  onClick={() => setCell(on ? null : { d, h })}
+                  className={`aspect-square rounded-[5px] transition-transform ${on ? "scale-110 ring-2 ring-ink" : ""}`}
+                  style={{ background: heatColor(v, max) }}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-3 flex items-center justify-between text-[11px] text-ink-muted">
+        <span>적음</span>
+        <span className="flex gap-0.5" aria-hidden="true">
+          {HEAT.map((c) => (
+            <span key={c} className="h-2.5 w-6 first:rounded-l-full last:rounded-r-full" style={{ background: c }} />
+          ))}
+        </span>
+        <span>많음</span>
+      </div>
+
+      {cell ? (
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-[18px] bg-kakao-soft p-4">
+          <div>
+            <p className="text-[14px] font-extrabold">
+              {weekdayLabel(cell.d)}요일 {cell.h}시
+            </p>
+            <p className="num text-[13px] text-ink-sub">{matrix[cell.d][cell.h]}건</p>
+          </div>
+          <button
+            type="button"
+            disabled={matrix[cell.d][cell.h] === 0}
+            onClick={() => navigate(eventsHref({ wd: cell.d, hr: [cell.h, cell.h] }))}
+            className="inline-flex h-11 items-center gap-1.5 rounded-full bg-ink pr-3 pl-4 text-[13px] font-bold text-white disabled:opacity-40"
+          >
+            이벤트 보기
+            <ArrowRight className="size-3.5 text-kakao" strokeWidth={2.8} aria-hidden="true" />
+          </button>
+        </div>
+      ) : (
+        <p className="mt-4 rounded-[18px] bg-surface p-4 text-[13px] leading-relaxed text-ink-sub">
+          {events.length === 0 ? "이 범위에는 이벤트가 없어요." : (
+            <>
+              가장 몰리는 시간대는 <b className="num">{win.from}–{win.from + 3}시</b>(전체의 {Math.round(win.share * 100)}%), 가장 많은 요일은 <b>{weekdayLabel(topDay)}요일</b>이에요. 칸을 누르면 자세히 볼 수 있어요.
+            </>
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export default function Analysis({ route }: { route: HashRoute }) {
+  const { scope, range, events, baseline, scopedAll, all } = useScopeData();
+  const { dismissedRecs } = prefsStore.use();
+  const [showHidden, setShowHidden] = useState(false);
+  const section = route.params.get("s");
+
+  const summary = useMemo(() => summarize(events, baseline, range), [events, baseline, range]);
+  const allRecs = useMemo(() => buildRecommendations({ events, scopedAll, range }), [events, scopedAll, range]);
+  const recs = allRecs.filter((r) => !dismissedRecs.includes(r.id));
+  const hidden = allRecs.filter((r) => dismissedRecs.includes(r.id));
+  const vStats = useMemo(() => vehicleStats(events, baseline, range), [events, baseline, range]);
+  const fleet = fleetRate(vStats);
+
+  useEffect(() => {
+    if (!section) return;
+    const t = window.setTimeout(() => document.getElementById(`sec-${section}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+    return () => window.clearTimeout(t);
+  }, [section]);
+
+  const total = events.length;
+  const byArea = (cause: string) =>
+    AREAS.map((a) => events.filter((e) => e.cause === cause && ZONE_BY_ID[e.zoneId].area === a.id).length);
+  const weather = ["맑음", "흐림", "비", ""].map((w) => ({ label: w || "미기록", n: events.filter((e) => e.weather === w).length }));
+  const rain = weather[2].n;
+  const rainRatio = total ? rain / total / 0.12 : 0;
+  const compareName = baselineName(scope);
+  const maxCause = Math.max(1, ...CAUSES.map((c) => events.filter((e) => e.cause === c.id).length));
+  const opRows = OPERATORS.map((o) => ({ ...o, n: events.filter((e) => e.operatorId === o.id).length })).sort((a, b) => b.n - a.n);
+  const maxOp = Math.max(1, ...opRows.map((o) => o.n));
+  const maxRate = Math.max(0.1, ...vStats.map((v) => v.rate));
+
+  function vehicleWeekly(id: string): number[] {
+    return Array.from({ length: 8 }, (_, i) => {
+      const start = new Date(Date.UTC(2026, 8, 7 + i * 7));
+      const s = start.toISOString().slice(0, 10);
+      const e = new Date(Date.UTC(2026, 8, 7 + i * 7 + 6)).toISOString().slice(0, 10);
+      return all.filter((ev) => ev.vehicleId === id && dayOf(ev.occurredAt) >= s && dayOf(ev.occurredAt) <= e).length;
+    });
+  }
+
+  return (
+    <>
+      <PageHeader eyebrow="데이터로 보는 개선 포인트" title="분석" />
+      <ScopeBar />
+
+      <div className="flex flex-col gap-8 px-5 pt-4 pb-12">
+        <nav aria-label="분석 바로가기" className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 py-0.5">
+          {JUMPS.map((j) => (
+            <button
+              key={j.id}
+              type="button"
+              onClick={() => document.getElementById(`sec-${j.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              className="h-10 shrink-0 rounded-full bg-surface px-4 text-[14px] font-bold text-ink-sub active:bg-line"
+            >
+              {j.label}
+            </button>
+          ))}
+        </nav>
+
+        <Block id="recs" title="추천 조치" note={recs.length ? `${periodLabel(scope)} 데이터에서 찾은 개선 포인트 ${recs.length}건` : undefined}>
+          {recs.length === 0 ? (
+            <div className="flex items-center gap-3 rounded-[22px] bg-surface p-4 text-[14px] text-ink-sub">
+              <Lightbulb className="size-5 shrink-0" aria-hidden="true" />
+              {total === 0 ? "이 범위에는 이벤트가 없어요." : "지금 바로 조치할 항목이 없어요. 기간을 넓혀 보면 더 많은 패턴이 보여요."}
+            </div>
+          ) : (
+            recs.map((r) => <RecCard key={r.id} rec={r} detailed />)
+          )}
+          {hidden.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <button type="button" onClick={() => setShowHidden((v) => !v)} className="h-10 self-start rounded-full px-3 text-[13px] font-bold text-ink-sub active:bg-surface">
+                숨긴 추천 {hidden.length}건 {showHidden ? "접기" : "보기"}
+              </button>
+              {showHidden &&
+                hidden.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between gap-3 rounded-[18px] bg-surface px-4 py-3">
+                    <span className="min-w-0 truncate text-[14px] font-semibold text-ink-sub">{r.title}</span>
+                    <button type="button" onClick={() => restoreRec(r.id)} className="h-9 shrink-0 rounded-full bg-white px-3.5 text-[13px] font-bold shadow-sm">
+                      다시 보기
+                    </button>
+                  </div>
+                ))}
+            </div>
+          )}
+        </Block>
+
+        <Block id="trend" title="주간 추이" note="최근 8주의 흐름이에요. 막대를 눌러 주별 변화를 보세요. 선택한 범위 밖의 주는 연하게 표시돼요.">
+          <TrendChart events={scopedAll} rangeStart={range.start} rangeEnd={range.end} />
+        </Block>
+
+        <Block id="time" title="요일·시간대" note="언제 이벤트가 몰리는지 보여줘요 (운행 시간 8–22시)">
+          <Heatmap events={events} />
+        </Block>
+
+        <Block id="patterns" title="반복 구간" note="같은 장소·같은 원인으로 반복된 구간 · 최근 8주 추이">
+          {summary.patterns.length === 0 ? (
+            <p className="rounded-[22px] bg-surface p-4 text-[14px] text-ink-sub">이 범위에서는 반복된 패턴이 없어요.</p>
+          ) : (
+            <ul className="flex flex-col gap-2.5">
+              {summary.patterns.map((p) => {
+                const diff = p.prevCount === null ? null : p.count - p.prevCount;
+                return (
+                  <li key={`${p.zoneId}-${p.cause}`}>
+                    <div className="flex items-center gap-3 rounded-[22px] border border-line bg-white p-4">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[16px] font-bold">{ZONE_BY_ID[p.zoneId].name}</p>
+                        <p className="mt-0.5 text-[13px] text-ink-muted">{CAUSE_BY_ID[p.cause].label}</p>
+                        <div className="mt-2 flex gap-1.5">
+                          <a href={`#${eventsHref({ zone: [p.zoneId], cause: [p.cause] })}`} className="inline-flex h-9 items-center rounded-full bg-surface px-3.5 text-[12px] font-bold active:bg-line">
+                            이벤트
+                          </a>
+                          <a href={`#/admin/map?zone=${p.zoneId}`} className="inline-flex h-9 items-center rounded-full bg-surface px-3.5 text-[12px] font-bold active:bg-line">
+                            지도
+                          </a>
+                        </div>
+                      </div>
+                      <Sparkline values={zoneCauseSeries(scopedAll, p.zoneId, p.cause)} label="최근 8주 추이" fill="rgba(254,229,0,0.35)" width={92} height={36} />
+                      <div className="w-[52px] text-right">
+                        <p className="num text-[22px] leading-none font-extrabold">
+                          {p.count}
+                          <span className="ml-0.5 text-[13px] font-bold">회</span>
+                        </p>
+                        <p className={`num mt-1 text-[12px] font-bold ${diff === null || diff === 0 ? "text-ink-muted" : diff > 0 ? "text-danger" : "text-ok"}`}>
+                          {diff === null ? "—" : diff === 0 ? "동일" : `${diff > 0 ? "+" : ""}${diff}`}
+                        </p>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Block>
+
+        <Block id="cause" title="원인·심각도·날씨" note={compareName ? `${compareName} 대비 변화와 지역별 비중을 함께 보여줘요` : "지역별 비중을 보여줘요"}>
+          <div className="rounded-panel border border-line bg-white p-5">
+            <div className="mb-3 flex items-center gap-3 text-[12px] font-semibold text-ink-sub">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-2.5 rounded-sm bg-kakao" aria-hidden="true" />
+                {AREAS[0].label}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-2.5 rounded-sm bg-navy" aria-hidden="true" />
+                {AREAS[1].label}
+              </span>
+            </div>
+            <ul className="flex flex-col gap-1">
+              {CAUSES.map((c) => {
+                const n = events.filter((e) => e.cause === c.id).length;
+                const [gn, sb] = byArea(c.id);
+                const prev = baseline ? baseline.filter((e) => e.cause === c.id).length : null;
+                return (
+                  <li key={c.id}>
+                    <a href={`#${eventsHref({ cause: [c.id] })}`} className="flex flex-col gap-1.5 rounded-[16px] px-2 py-2.5 active:bg-surface">
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="text-[14px] font-bold">{c.label}</span>
+                        <span className="flex items-center gap-2">
+                          <Delta pct={pctChange(n, prev)} />
+                          <span className="num w-8 text-right text-[15px] font-extrabold">{n}</span>
+                        </span>
+                      </span>
+                      <span className="flex h-2.5 overflow-hidden rounded-full bg-surface" style={{ width: `${Math.max(4, (n / maxCause) * 100)}%` }}>
+                        <span className="bg-kakao" style={{ width: `${n ? (gn / n) * 100 : 0}%` }} />
+                        <span className="bg-navy" style={{ width: `${n ? (sb / n) * 100 : 0}%` }} />
+                      </span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          <div className="rounded-panel border border-line bg-white p-5">
+            <h3 className="text-[15px] font-extrabold">심각도</h3>
+            <div className="mt-3 flex h-4 overflow-hidden rounded-full bg-surface" role="img" aria-label={`사고 ${summary.bySeverity.high}건, 주의 ${summary.bySeverity.mid}건, 낮음 ${summary.bySeverity.low}건`}>
+              <span className="bg-danger" style={{ width: `${total ? (summary.bySeverity.high / total) * 100 : 0}%` }} />
+              <span className="bg-warning" style={{ width: `${total ? (summary.bySeverity.mid / total) * 100 : 0}%` }} />
+              <span className="bg-ink-muted/40" style={{ width: `${total ? (summary.bySeverity.low / total) * 100 : 0}%` }} />
+            </div>
+            <ul className="mt-3 grid grid-cols-3 gap-2 text-center">
+              {([
+                ["high", "사고", "bg-danger"],
+                ["mid", "주의", "bg-warning"],
+                ["low", "낮음", "bg-ink-muted/40"],
+              ] as const).map(([k, label, color]) => (
+                <li key={k}>
+                  <a href={`#${eventsHref({ sev: [k] })}`} className="flex flex-col items-center gap-1 rounded-[16px] bg-surface py-3 active:bg-line">
+                    <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-ink-sub">
+                      <span className={`size-2.5 rounded-full ${color}`} aria-hidden="true" />
+                      {label}
+                    </span>
+                    <span className="num text-[20px] font-extrabold">{summary.bySeverity[k]}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-panel border border-line bg-white p-5">
+            <h3 className="text-[15px] font-extrabold">날씨</h3>
+            <ul className="mt-3 flex flex-col gap-2.5">
+              {weather.map((w) => (
+                <li key={w.label}>
+                  <a href={`#${eventsHref({ wx: [w.label] })}`} className="flex items-center gap-3 active:opacity-70">
+                    <span className="w-12 shrink-0 text-[14px] font-semibold text-ink-sub">{w.label}</span>
+                    <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface">
+                      <span className={`block h-full rounded-full ${w.label === "비" ? "bg-navy" : "bg-kakao"}`} style={{ width: `${total ? (w.n / total) * 100 : 0}%` }} />
+                    </span>
+                    <span className="num w-16 shrink-0 text-right text-[14px] font-extrabold">
+                      {w.n}건 <span className="text-[11px] font-semibold text-ink-muted">{total ? Math.round((w.n / total) * 100) : 0}%</span>
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+            {rainRatio >= 1.2 && <p className="mt-3 rounded-[14px] bg-kakao-soft p-3 text-[13px] leading-relaxed">비 오는 날 이벤트 비중이 운행 시간 중 비 비중(12%, 예시 값)의 <b className="num">{rainRatio.toFixed(1)}배</b>예요.</p>}
+          </div>
+        </Block>
+
+        <Block id="vehicle" title="차량·오퍼레이터" note="주행 거리가 달라서 1,000km당 이벤트 수로 비교해요 (주행 거리는 예시 값)">
+          <ul className="flex flex-col gap-2.5">
+            {vStats.map((v) => (
+              <li key={v.id}>
+                <a href={`#${eventsHref({ veh: [v.id] })}`} className="flex items-center gap-3 rounded-[22px] border border-line bg-white p-4 active:bg-surface">
+                  <div className="min-w-0 flex-1">
+                    <p className="flex items-center gap-2">
+                      <span className="num text-[16px] font-extrabold">{v.id}</span>
+                      <span className={`num inline-flex h-5 items-center rounded-full px-2 text-[11px] font-bold ${v.versusFleet > 15 ? "bg-danger/10 text-danger" : v.versusFleet < -15 ? "bg-[#e6f6ed] text-[#0f7a42]" : "bg-surface text-ink-sub"}`}>
+                        평균 대비 {v.versusFleet > 0 ? "+" : ""}
+                        {v.versusFleet}%
+                      </span>
+                    </p>
+                    <p className="num mt-0.5 text-[12px] text-ink-muted">
+                      {v.count}건 · {v.km.toLocaleString()}km · 1,000km당 {v.rate.toFixed(1)}건
+                    </p>
+                    <span className="mt-2 block h-2 overflow-hidden rounded-full bg-surface">
+                      <span className="block h-full rounded-full bg-kakao" style={{ width: `${(v.rate / maxRate) * 100}%` }} />
+                    </span>
+                  </div>
+                  <Sparkline values={vehicleWeekly(v.id)} label={`${v.id} 최근 8주 추이`} width={72} height={32} />
+                </a>
+              </li>
+            ))}
+          </ul>
+          <p className="num px-1 text-[12px] text-ink-muted">전체 평균 1,000km당 {fleet.toFixed(1)}건</p>
+
+          <div className="rounded-panel border border-line bg-white p-5">
+            <h3 className="text-[15px] font-extrabold">오퍼레이터별 기록 수</h3>
+            <ul className="mt-3 flex flex-col gap-2.5">
+              {opRows.map((o) => (
+                <li key={o.id} className="flex items-center gap-3">
+                  <span className="w-12 shrink-0 text-[14px] font-semibold text-ink-sub">{o.name}</span>
+                  <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface">
+                    <span className="block h-full rounded-full bg-navy" style={{ width: `${(o.n / maxOp) * 100}%` }} />
+                  </span>
+                  <span className="num w-8 shrink-0 text-right text-[14px] font-extrabold">{o.n}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Block>
+
+        <section aria-label="보고서 내보내기" className="flex flex-col gap-3 rounded-panel bg-navy p-5 text-white">
+          <div className="flex items-center gap-2">
+            <ChartNoAxesColumn className="size-5 text-kakao" aria-hidden="true" />
+            <h2 className="text-[18px] font-extrabold">이 분석 공유하기</h2>
+          </div>
+          <p className="text-[13px] leading-relaxed text-white/70">지금 보고 있는 범위의 요약을 복사하거나, 이벤트 원본을 CSV로 내려받을 수 있어요.</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                const ok = await copyText(summaryText(summary, range, periodLabel(scope)));
+                showToast(ok ? "요약을 복사했어요" : "복사하지 못했어요");
+              }}
+              className="flex h-12 items-center justify-center gap-1.5 rounded-full bg-kakao text-[14px] font-extrabold text-ink active:bg-kakao-press"
+            >
+              <Copy className="size-4" aria-hidden="true" />
+              요약 복사
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                downloadText(`주행이슈_${range.start}_${range.end}.csv`, eventsToCsv(events));
+                showToast(`${events.length}건을 CSV로 내보냈어요`);
+              }}
+              className="flex h-12 items-center justify-center gap-1.5 rounded-full bg-white/12 text-[14px] font-bold active:bg-white/20"
+            >
+              <Download className="size-4" aria-hidden="true" />
+              CSV 내보내기
+            </button>
+          </div>
+        </section>
+      </div>
+    </>
+  );
+}

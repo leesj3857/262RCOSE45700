@@ -1,4 +1,4 @@
-import type { AreaId, CauseId, EventTypeId, Zone } from "@/types/analytics";
+import type { AreaId, CauseId, EventTypeId, Operator, Vehicle, Zone } from "@/types/analytics";
 
 export const EVENT_TYPES: { id: EventTypeId; label: string; reaction: string }[] = [
   { id: "hardBrake", label: "급정거", reaction: "급하게 멈췄어요" },
@@ -119,4 +119,40 @@ export const AREA_ROADS: Record<AreaId, { arterial: string[]; minor: string[]; w
       { x: 296, y: 20, w: 50, h: 34 },
     ],
   },
+};
+
+export const VEHICLES: Vehicle[] = [
+  { id: "AD-01", plate: "서울 71바 1201", weeklyKm: 1480, weight: 1 },
+  { id: "AD-02", plate: "서울 71바 1202", weeklyKm: 1620, weight: 1 },
+  { id: "AD-03", plate: "서울 71바 1203", weeklyKm: 1390, weight: 1.7 },
+  { id: "AD-04", plate: "서울 71바 1204", weeklyKm: 1550, weight: 1 },
+  { id: "AD-05", plate: "서울 71바 1205", weeklyKm: 1210, weight: 0.7 },
+  { id: "AD-06", plate: "서울 71바 1206", weeklyKm: 1700, weight: 0.9 },
+];
+
+export const OPERATORS: Operator[] = [
+  { id: "op-1", name: "김도윤" },
+  { id: "op-2", name: "박서연" },
+  { id: "op-3", name: "최민준" },
+  { id: "op-4", name: "정하은" },
+  { id: "op-5", name: "오지훈" },
+];
+
+export const HOUR_MIN = 8;
+export const HOUR_MAX = 21;
+
+export const HOUR_WINDOWS: { id: string; label: string; from: number; to: number }[] = [
+  { id: "morning", label: "출근 07–10시", from: 7, to: 10 },
+  { id: "day", label: "낮 11–16시", from: 11, to: 16 },
+  { id: "evening", label: "퇴근 17–20시", from: 17, to: 20 },
+  { id: "night", label: "저녁 21시 이후", from: 21, to: 23 },
+];
+
+export const TYPE_COLORS: Record<EventTypeId, string> = {
+  hardBrake: "#fee500",
+  hardAccel: "#1a2030",
+  hardSteer: "#7c8aa5",
+  contact: "#f08c00",
+  collision: "#e03131",
+  other: "#cfd3da",
 };

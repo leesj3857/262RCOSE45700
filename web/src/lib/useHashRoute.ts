@@ -31,10 +31,3 @@ export function navigate(to: string, replace = false) {
   }
   window.location.hash = to;
 }
-
-export function eventsLink(filter: { type?: string; cause?: string; zone?: string }): string {
-  const q = new URLSearchParams();
-  Object.entries(filter).forEach(([k, v]) => v && q.set(k, v));
-  const s = q.toString();
-  return `/admin/events${s ? `?${s}` : ""}`;
-}

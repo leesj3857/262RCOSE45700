@@ -1,169 +1,260 @@
-import { useMemo, useState } from "react";
-import { ArrowRight, Repeat } from "lucide-react";
-import type { AreaId } from "@/types/analytics";
-import { CAUSE_BY_ID, ZONE_BY_ID, zoneCounts } from "@/lib/analytics";
-import { eventsLink } from "@/lib/useHashRoute";
-import { EVENTS_THIS_WEEK } from "@/mockData/events";
-import { AREAS, AREA_ROADS, ZONES } from "@/mockData/taxonomy";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, Hand, MapPinOff, Repeat } from "lucide-react";
+import type { AreaId, CauseId } from "@/types/analytics";
+import { CAUSE_BY_ID, pctChange, zoneCauseSeries, zoneCounts } from "@/lib/analytics";
+import { daysIn } from "@/lib/dates";
+import { eventsHref } from "@/lib/filters";
+import type { HashRoute } from "@/lib/useHashRoute";
+import { ZONE_BY_ID } from "@/lib/zones";
+import { AREAS, CAUSES, ZONES } from "@/mockData/taxonomy";
+import { useScopeData } from "@/state/useScopeData";
+import Chip from "./parts/Chip";
+import Delta from "./parts/Delta";
+import EmptyState from "./parts/EmptyState";
 import EventRow from "./parts/EventRow";
 import PageHeader from "./parts/PageHeader";
+import ScopeBar from "./parts/ScopeBar";
+import Segmented from "./parts/Segmented";
+import Sparkline from "./parts/Sparkline";
+import ZoneMap, { type MapMode } from "./parts/ZoneMap";
 
-const REPEAT_THRESHOLD = 8;
-const counts = zoneCounts(EVENTS_THIS_WEEK);
+const MODES: { id: MapMode; label: string }[] = [
+  { id: "count", label: "건수" },
+  { id: "heat", label: "히트맵" },
+  { id: "events", label: "개별 이벤트" },
+];
 
-function radius(n: number) {
-  return 12 + Math.sqrt(n) * 4.6;
-}
+export default function MapView({ route }: { route: HashRoute }) {
+  const { scope, range, events, baseline, scopedAll } = useScopeData();
+  const zoneParam = route.params.get("zone");
+  const eventParam = route.params.get("event");
 
-function topOf(area: AreaId): string {
-  return ZONES.filter((z) => z.area === area).sort((a, b) => (counts.get(b.id)?.length ?? 0) - (counts.get(a.id)?.length ?? 0))[0].id;
-}
+  const initialArea: AreaId = zoneParam && ZONE_BY_ID[zoneParam] ? ZONE_BY_ID[zoneParam].area : scope.area !== "all" ? scope.area : "gangnam";
+  const [area, setArea] = useState<AreaId>(initialArea);
+  const [mode, setMode] = useState<MapMode>(eventParam ? "events" : "count");
+  const [cause, setCause] = useState<CauseId | "all">("all");
+  const [highOnly, setHighOnly] = useState(false);
+  const [selectedZone, setSelectedZone] = useState<string | null>(zoneParam);
+  const [selectedEvent, setSelectedEvent] = useState<string | null>(eventParam);
+  const [focus, setFocus] = useState<string | null>(zoneParam);
 
-export default function MapView() {
-  const [area, setArea] = useState<AreaId>("gangnam");
-  const [selected, setSelected] = useState<string>(() => topOf("gangnam"));
+  useEffect(() => {
+    if (zoneParam && ZONE_BY_ID[zoneParam]) {
+      setArea(ZONE_BY_ID[zoneParam].area);
+      setSelectedZone(zoneParam);
+      setFocus(zoneParam);
+    }
+    if (eventParam) {
+      setSelectedEvent(eventParam);
+      setMode("events");
+    }
+  }, [zoneParam, eventParam]);
 
-  const zones = useMemo(() => ZONES.filter((z) => z.area === area).sort((a, b) => Number(a.id === selected) - Number(b.id === selected)), [area, selected]);
-  const roads = AREA_ROADS[area];
-  const zone = ZONE_BY_ID[selected];
-  const list = counts.get(selected) ?? [];
-  const latest = [...list].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt)).slice(0, 2);
-  const causeTally = new Map<string, number>();
-  list.forEach((e) => causeTally.set(e.cause, (causeTally.get(e.cause) ?? 0) + 1));
-  const topCause = [...causeTally.entries()].sort((a, b) => b[1] - a[1])[0];
+  const filtered = useMemo(() => events.filter((e) => (cause === "all" || e.cause === cause) && (!highOnly || e.severity === "high")), [events, cause, highOnly]);
+  const baselineFiltered = useMemo(
+    () => (baseline ? baseline.filter((e) => (cause === "all" || e.cause === cause) && (!highOnly || e.severity === "high")) : null),
+    [baseline, cause, highOnly],
+  );
+  const counts = useMemo(() => zoneCounts(filtered), [filtered]);
+  const areaZones = useMemo(() => ZONES.filter((z) => z.area === area), [area]);
+  const ranking = useMemo(
+    () => [...areaZones].map((z) => ({ zone: z, n: counts.get(z.id)?.length ?? 0 })).sort((a, b) => b.n - a.n),
+    [areaZones, counts],
+  );
+  const areaTotal = ranking.reduce((a, r) => a + r.n, 0);
+  const threshold = Math.max(3, Math.round((8 * daysIn(range)) / 7));
+  const maxN = Math.max(1, ranking[0]?.n ?? 1);
+
+  const zone = selectedZone ? ZONE_BY_ID[selectedZone] : null;
+  const zoneEvents = zone ? (counts.get(zone.id) ?? []) : [];
+  const latest = [...zoneEvents].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt)).slice(0, 3);
+  const zonePrev = zone && baselineFiltered ? baselineFiltered.filter((e) => e.zoneId === zone.id).length : null;
+  const causeTally = new Map<CauseId, number>();
+  zoneEvents.forEach((e) => causeTally.set(e.cause, (causeTally.get(e.cause) ?? 0) + 1));
+  const causeRows = [...causeTally.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const pickedEvent = selectedEvent ? (filtered.find((e) => e.id === selectedEvent) ?? scopedAll.find((e) => e.id === selectedEvent) ?? null) : null;
 
   function pickArea(next: AreaId) {
     setArea(next);
-    setSelected(topOf(next));
+    const top = ZONES.filter((z) => z.area === next)
+      .map((z) => ({ z, n: counts.get(z.id)?.length ?? 0 }))
+      .sort((a, b) => b.n - a.n)[0];
+    setSelectedZone(top?.z.id ?? null);
+    setSelectedEvent(null);
+    setFocus(null);
+  }
+
+  function pickZone(id: string) {
+    setSelectedZone(id);
+    setSelectedEvent(null);
   }
 
   return (
     <>
-      <PageHeader eyebrow="이번 주 발생 위치" title="이벤트 지도" />
+      <PageHeader eyebrow="발생 위치" title="이벤트 지도" />
+      <ScopeBar />
 
-      <div className="flex flex-col gap-3 px-5 pb-8">
-        <div role="group" aria-label="지역" className="flex rounded-full bg-surface p-1">
-          {AREAS.map((a) => (
-            <button
-              key={a.id}
-              type="button"
-              onClick={() => pickArea(a.id)}
-              className={`h-10 flex-1 rounded-full text-[14px] font-bold transition-colors ${
-                area === a.id ? "bg-ink text-white" : "text-ink-muted"
-              }`}
-            >
-              {a.label}
-            </button>
+      <div className="flex flex-col gap-3 px-5 pt-4 pb-10">
+        <Segmented label="지역" value={area} onChange={pickArea} options={AREAS.map((a) => ({ id: a.id, label: a.label }))} />
+
+        <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 py-0.5">
+          <Chip active={cause === "all"} onClick={() => setCause("all")}>
+            모든 원인
+          </Chip>
+          {CAUSES.filter((c) => c.id !== "unknown").map((c) => (
+            <Chip key={c.id} active={cause === c.id} onClick={() => setCause(cause === c.id ? "all" : c.id)}>
+              {c.label}
+            </Chip>
           ))}
+          <Chip active={highOnly} tone="kakao" onClick={() => setHighOnly((v) => !v)}>
+            사고만
+          </Chip>
         </div>
 
-        <div className="overflow-hidden rounded-panel border border-line">
-          <svg viewBox="0 0 360 420" className="block w-full bg-map-land" role="img" aria-label={`${AREAS.find((a) => a.id === area)?.label} 이벤트 발생 지도`}>
-            {roads.parks.map((p, i) => (
-              <rect key={i} x={p.x} y={p.y} width={p.w} height={p.h} rx={10} className="fill-map-park" />
-            ))}
-            {roads.water && <path d={roads.water} fill="none" strokeWidth={22} strokeLinecap="round" className="stroke-map-water" />}
-            {roads.minor.map((d, i) => (
-              <path key={i} d={d} fill="none" strokeWidth={5} className="stroke-map-road" />
-            ))}
-            {roads.arterial.map((d, i) => (
-              <g key={i}>
-                <path d={d} fill="none" strokeWidth={13} className="stroke-white" />
-                <path d={d} fill="none" strokeWidth={9} className="stroke-map-arterial" />
-              </g>
-            ))}
+        <Segmented label="지도 표시 방식" value={mode} onChange={setMode} options={MODES} />
 
-            {zones.map((z) => {
-              const n = counts.get(z.id)?.length ?? 0;
-              const r = radius(n);
-              const active = z.id === selected;
-              const repeated = n >= REPEAT_THRESHOLD;
-              return (
-                <g
-                  key={z.id}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`${z.name} ${n}건`}
-                  aria-pressed={active}
-                  onClick={() => setSelected(z.id)}
-                  onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setSelected(z.id)}
-                  className="cursor-pointer outline-none"
-                >
-                  {repeated && (
-                    <circle cx={z.x} cy={z.y} r={r + 7} fill="none" strokeWidth={2} strokeDasharray="4 4" className="stroke-ink/60" />
-                  )}
-                  <circle cx={z.x} cy={z.y} r={r} className={active ? "fill-navy" : "fill-kakao"} stroke="#fff" strokeWidth={3} opacity={active ? 1 : 0.92} />
-                  <text
-                    x={z.x}
-                    y={z.y + 6}
-                    textAnchor="middle"
-                    fontSize={n >= 10 ? 18 : 15}
-                    fontWeight={800}
-                    className={active ? "fill-kakao" : "fill-ink"}
-                  >
-                    {n}
-                  </text>
-                  <text
-                    x={z.x}
-                    y={z.y + r + 15}
-                    textAnchor="middle"
-                    fontSize={10.5}
-                    fontWeight={700}
-                    className="fill-ink-sub"
-                    stroke="#f1f2f4"
-                    strokeWidth={3.5}
-                    paintOrder="stroke"
-                  >
-                    {z.name}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
-        </div>
+        <ZoneMap
+          area={area}
+          events={filtered}
+          mode={mode}
+          selectedZone={selectedZone}
+          onSelectZone={pickZone}
+          selectedEvent={selectedEvent}
+          onSelectEvent={(id) => {
+            setSelectedEvent(id);
+            const ev = filtered.find((e) => e.id === id);
+            if (ev) setSelectedZone(ev.zoneId);
+          }}
+          focusZone={focus}
+          repeatThreshold={threshold}
+        />
 
-        <p className="flex items-center justify-center gap-4 text-[12px] text-ink-muted">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="size-3 rounded-full bg-kakao" aria-hidden="true" />
-            원이 클수록 건수가 많아요
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="size-3 rounded-full border-2 border-dashed border-ink/60" aria-hidden="true" />
-            반복 구간 ({REPEAT_THRESHOLD}건 이상)
-          </span>
+        <p className="flex items-center justify-center gap-1.5 text-center text-[12px] text-ink-muted">
+          <Hand className="size-3.5" aria-hidden="true" />
+          {mode === "events" ? "확대해서 점을 누르면 이벤트를 볼 수 있어요" : mode === "heat" ? "붉을수록 이벤트가 몰린 곳이에요" : `원이 클수록 많이 발생 · 점선 = 반복 구간(${threshold}건 이상)`}
         </p>
 
-        <section aria-label="선택한 구간" className="rounded-panel bg-navy p-5 text-white">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="truncate text-[18px] font-extrabold">{zone.name}</p>
-              <p className="mt-0.5 truncate text-[12px] text-white/55">{zone.address}</p>
-            </div>
-            <p className="num shrink-0 text-[34px] leading-none font-extrabold text-kakao">
-              {list.length}
-              <span className="ml-0.5 text-[15px] font-bold text-white">건</span>
-            </p>
-          </div>
-          {topCause && (
-            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[13px] font-semibold">
-              {list.length >= REPEAT_THRESHOLD && <Repeat className="size-3.5 text-kakao" strokeWidth={2.6} aria-hidden="true" />}
-              최다 원인 · {CAUSE_BY_ID[topCause[0] as keyof typeof CAUSE_BY_ID].label} {topCause[1]}건
-            </p>
-          )}
-          <div className="mt-4 flex flex-col gap-2 [&_a]:border-transparent">
-            {latest.map((e) => (
-              <div key={e.id} className="text-ink">
-                <EventRow event={e} />
+        {areaTotal === 0 && (
+          <EmptyState icon={<MapPinOff className="size-6" aria-hidden="true" />} title="이 지역에는 표시할 이벤트가 없어요" description="다른 지역을 고르거나 원인 필터와 보기 범위를 바꿔 보세요." />
+        )}
+
+        {zone && mode !== "events" && (
+          <section aria-label="선택한 구간" className="rounded-panel bg-navy p-5 text-white">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-[18px] font-extrabold">{zone.name}</p>
+                <p className="mt-0.5 truncate text-[12px] text-white/60">{zone.address}</p>
               </div>
-            ))}
-          </div>
-          <a
-            href={`#${eventsLink({ zone: zone.id })}`}
-            className="mt-4 flex h-12 items-center justify-center gap-2 rounded-full bg-kakao text-[15px] font-bold text-ink active:bg-kakao-press"
-          >
-            목록에서 모두 보기
-            <ArrowRight className="size-4" strokeWidth={2.6} aria-hidden="true" />
-          </a>
+              <div className="shrink-0 text-right">
+                <p className="num text-[34px] leading-none font-extrabold text-kakao">
+                  {zoneEvents.length}
+                  <span className="ml-0.5 text-[15px] font-bold text-white">건</span>
+                </p>
+                <div className="mt-1 flex justify-end [&_span]:text-white/80">
+                  <Delta pct={pctChange(zoneEvents.length, zonePrev)} />
+                </div>
+              </div>
+            </div>
+
+            {zoneEvents.length >= threshold && (
+              <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[13px] font-bold">
+                <Repeat className="size-3.5 text-kakao" strokeWidth={2.6} aria-hidden="true" />
+                반복 구간
+              </p>
+            )}
+
+            {causeRows.length > 0 && (
+              <ul className="mt-4 flex flex-col gap-2">
+                {causeRows.map(([c, n]) => (
+                  <li key={c} className="flex items-center gap-3 text-[13px]">
+                    <span className="w-[108px] shrink-0 text-white/80">{CAUSE_BY_ID[c].label}</span>
+                    <span className="h-2 flex-1 overflow-hidden rounded-full bg-white/12">
+                      <span className="block h-full rounded-full bg-kakao" style={{ width: `${(n / zoneEvents.length) * 100}%` }} />
+                    </span>
+                    <span className="num w-7 text-right font-bold">{n}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="mt-4 flex items-center justify-between rounded-[16px] bg-white/8 px-4 py-3">
+              <span className="text-[12px] font-semibold text-white/70">최근 8주 추이</span>
+              <Sparkline values={zoneCauseSeries(scopedAll, zone.id, cause === "all" ? undefined : cause)} stroke="#fee500" dot="#fee500" label="최근 8주 추이" width={120} />
+            </div>
+
+            <div className="mt-4 flex flex-col gap-2">
+              {latest.map((e) => (
+                <div key={e.id} className="text-ink">
+                  <EventRow event={e} showDate />
+                </div>
+              ))}
+            </div>
+            <a
+              href={`#${eventsHref({ zone: [zone.id], cause: cause === "all" ? [] : [cause] })}`}
+              className="mt-4 flex h-12 items-center justify-center gap-2 rounded-full bg-kakao text-[15px] font-extrabold text-ink active:bg-kakao-press"
+            >
+              이 구간 이벤트 {zoneEvents.length}건 보기
+              <ArrowRight className="size-4" strokeWidth={2.6} aria-hidden="true" />
+            </a>
+          </section>
+        )}
+
+        {mode === "events" && (
+          <section aria-label="선택한 이벤트" className="flex flex-col gap-2.5">
+            {pickedEvent ? (
+              <EventRow event={pickedEvent} showDate />
+            ) : (
+              <p className="rounded-[20px] bg-surface px-4 py-6 text-center text-[14px] text-ink-sub">지도에서 점을 눌러 이벤트를 확인하세요.</p>
+            )}
+            <p className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[12px] text-ink-muted">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-3 rounded-full border border-ink bg-kakao" aria-hidden="true" />
+                낮음
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-3 rounded-full border border-ink bg-warning" aria-hidden="true" />
+                주의
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-3 rounded-full border border-ink bg-danger" aria-hidden="true" />
+                사고
+              </span>
+            </p>
+          </section>
+        )}
+
+        <section aria-label="구간 순위" className="mt-2 flex flex-col gap-2">
+          <h2 className="px-1 text-[18px] font-extrabold tracking-tight">
+            {AREAS.find((a) => a.id === area)?.label} 구간 순위
+          </h2>
+          <ul className="flex flex-col rounded-panel border border-line bg-white p-2">
+            {ranking.map(({ zone: z, n }, i) => {
+              const on = z.id === selectedZone;
+              return (
+                <li key={z.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      pickZone(z.id);
+                      setFocus(null);
+                      window.setTimeout(() => setFocus(z.id), 0);
+                    }}
+                    aria-pressed={on}
+                    className={`flex w-full items-center gap-3 rounded-[18px] px-3 py-3 text-left transition-colors ${on ? "bg-kakao-soft" : "active:bg-surface"}`}
+                  >
+                    <span className={`num flex size-8 shrink-0 items-center justify-center rounded-full text-[14px] font-extrabold ${i === 0 ? "bg-ink text-white" : "bg-surface text-ink-sub"}`}>{i + 1}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[15px] font-bold">{z.name}</span>
+                      <span className="mt-1.5 block h-2 overflow-hidden rounded-full bg-surface">
+                        <span className="block h-full rounded-full bg-kakao" style={{ width: `${(n / maxN) * 100}%` }} />
+                      </span>
+                    </span>
+                    <span className="num w-10 shrink-0 text-right text-[17px] font-extrabold">{n}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         </section>
       </div>
     </>
