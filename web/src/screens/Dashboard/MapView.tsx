@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Hand, MapPinOff, Repeat } from "lucide-react";
+import { ArrowRight, Hand, MapPinOff, Repeat, SlidersHorizontal } from "lucide-react";
 import type { AreaId, CauseId } from "@/types/analytics";
 import { CAUSE_BY_ID, pctChange, zoneCauseSeries, zoneCounts } from "@/lib/analytics";
 import { daysIn } from "@/lib/dates";
@@ -7,6 +7,7 @@ import { eventsHref } from "@/lib/filters";
 import type { HashRoute } from "@/lib/useHashRoute";
 import { ZONE_BY_ID } from "@/lib/zones";
 import { AREAS, CAUSES, ZONES } from "@/mockData/taxonomy";
+import { resetScope } from "@/state/userData";
 import { useScopeData } from "@/state/useScopeData";
 import Chip from "./parts/Chip";
 import Delta from "./parts/Delta";
@@ -14,6 +15,7 @@ import EmptyState from "./parts/EmptyState";
 import EventRow from "./parts/EventRow";
 import PageHeader from "./parts/PageHeader";
 import ScopeBar from "./parts/ScopeBar";
+import Sheet from "./parts/Sheet";
 import Segmented from "./parts/Segmented";
 import Sparkline from "./parts/Sparkline";
 import ZoneMap, { type MapMode } from "./parts/ZoneMap";
@@ -34,6 +36,7 @@ export default function MapView({ route }: { route: HashRoute }) {
   const [mode, setMode] = useState<MapMode>(eventParam ? "events" : "count");
   const [cause, setCause] = useState<CauseId | "all">("all");
   const [highOnly, setHighOnly] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [selectedZone, setSelectedZone] = useState<string | null>(zoneParam);
   const [selectedEvent, setSelectedEvent] = useState<string | null>(eventParam);
   const [focus, setFocus] = useState<string | null>(zoneParam);
@@ -91,27 +94,27 @@ export default function MapView({ route }: { route: HashRoute }) {
 
   return (
     <>
-      <PageHeader eyebrow="발생 위치" title="이벤트 지도" />
+      <PageHeader title="지도" sub="어느 곳에서 많이 생기는지 위치로 봐요" />
       <ScopeBar />
 
       <div className="flex flex-col gap-3 px-5 pt-4 pb-10">
         <Segmented label="지역" value={area} onChange={pickArea} options={AREAS.map((a) => ({ id: a.id, label: a.label }))} />
 
-        <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 py-0.5">
-          <Chip active={cause === "all"} onClick={() => setCause("all")}>
-            모든 원인
-          </Chip>
-          {CAUSES.filter((c) => c.id !== "unknown").map((c) => (
-            <Chip key={c.id} active={cause === c.id} onClick={() => setCause(cause === c.id ? "all" : c.id)}>
-              {c.label}
-            </Chip>
-          ))}
-          <Chip active={highOnly} tone="kakao" onClick={() => setHighOnly((v) => !v)}>
-            사고만
-          </Chip>
-        </div>
-
         <Segmented label="지도 표시 방식" value={mode} onChange={setMode} options={MODES} />
+
+        <button
+          type="button"
+          onClick={() => setFilterOpen(true)}
+          aria-haspopup="dialog"
+          className="flex h-12 items-center gap-2 rounded-full border border-line px-4 text-left active:bg-surface"
+        >
+          <SlidersHorizontal className="size-4 shrink-0" aria-hidden="true" />
+          <span className="min-w-0 flex-1 truncate text-[14px] font-bold">
+            {cause === "all" ? "모든 원인" : CAUSE_BY_ID[cause].label}
+            {highOnly ? " · 사고만" : ""}
+          </span>
+          <span className="text-[13px] font-semibold text-ink-muted">조건 바꾸기</span>
+        </button>
 
         <ZoneMap
           area={area}
@@ -135,7 +138,22 @@ export default function MapView({ route }: { route: HashRoute }) {
         </p>
 
         {areaTotal === 0 && (
-          <EmptyState icon={<MapPinOff className="size-6" aria-hidden="true" />} title="이 지역에는 표시할 이벤트가 없어요" description="다른 지역을 고르거나 원인 필터와 보기 범위를 바꿔 보세요." />
+          <EmptyState
+            icon={<MapPinOff className="size-6" aria-hidden="true" />}
+            title="이 지역에는 표시할 이벤트가 없어요"
+            description={
+              scope.area !== "all" && scope.area !== area
+                ? "보기 범위가 다른 지역으로 제한되어 있어요."
+                : "다른 지역을 고르거나 원인 조건과 보기 범위를 바꿔 보세요."
+            }
+            action={
+              scope.area !== "all" || scope.vehicle !== "all" ? (
+                <button type="button" onClick={resetScope} className="h-11 rounded-full bg-ink px-5 text-[14px] font-bold text-white">
+                  보기 범위 처음으로
+                </button>
+              ) : undefined
+            }
+          />
         )}
 
         {zone && mode !== "events" && (
@@ -257,6 +275,33 @@ export default function MapView({ route }: { route: HashRoute }) {
           </ul>
         </section>
       </div>
+      {filterOpen && (
+        <Sheet open onClose={() => setFilterOpen(false)} title="지도 조건">
+          <h3 className="mb-2 text-[13px] font-bold text-ink-sub">원인</h3>
+          <div className="flex flex-wrap gap-2">
+            <Chip active={cause === "all"} onClick={() => setCause("all")}>
+              모든 원인
+            </Chip>
+            {CAUSES.filter((c) => c.id !== "unknown").map((c) => (
+              <Chip key={c.id} active={cause === c.id} onClick={() => setCause(c.id)}>
+                {c.label}
+              </Chip>
+            ))}
+          </div>
+          <h3 className="mt-5 mb-2 text-[13px] font-bold text-ink-sub">심각도</h3>
+          <div className="flex gap-2">
+            <Chip active={!highOnly} onClick={() => setHighOnly(false)}>
+              모두
+            </Chip>
+            <Chip active={highOnly} tone="kakao" onClick={() => setHighOnly(true)}>
+              사고만
+            </Chip>
+          </div>
+          <button type="button" onClick={() => setFilterOpen(false)} className="mt-6 h-12 w-full rounded-full bg-kakao text-[15px] font-extrabold active:bg-kakao-press">
+            <span className="num">{filtered.length}</span>건 지도에 표시
+          </button>
+        </Sheet>
+      )}
     </>
   );
 }

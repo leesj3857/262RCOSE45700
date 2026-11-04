@@ -1,7 +1,7 @@
 import type { CauseId, EventTypeId, IssueEvent, Severity, Status } from "@/types/analytics";
 import { CAUSES, EVENT_TYPES } from "@/mockData/taxonomy";
 import { dayOf, hourOf, weekdayIndex, weekdayLabel, dotDay } from "./dates";
-import { minConfidence, needsCheck } from "./analytics";
+import { minConfidence, needsCheck, searchEvents, type SearchResult } from "./analytics";
 import { ZONE_BY_ID } from "./zones";
 
 export type SortKey = "latest" | "oldest" | "severity" | "check";
@@ -184,4 +184,55 @@ export function describeFilters(f: Filters): FilterChip[] {
     chips.push({ key: "date", label: text, clear: (s) => ({ ...s, df: "", dt: "" }) });
   }
   return chips;
+}
+
+export type ListParams = {
+  filters: Filters;
+  q: string;
+  ex: string[];
+};
+
+export function parseListParams(params: URLSearchParams): ListParams {
+  return {
+    filters: parseFilters(params),
+    q: (params.get("q") ?? "").slice(0, 80),
+    ex: list(params.get("ex")),
+  };
+}
+
+export function listToQuery(p: ListParams): string {
+  const q = new URLSearchParams(filtersToQuery(p.filters));
+  if (p.q.trim()) q.set("q", p.q.trim());
+  if (p.q.trim() && p.ex.length) q.set("ex", p.ex.join(","));
+  return q.toString();
+}
+
+export function runList(events: IssueEvent[], p: ListParams): { list: IssueEvent[]; search: SearchResult | null } {
+  const text = p.q.trim();
+  const search = text ? searchEvents(events, text, p.ex) : null;
+  const base = search ? search.results : events;
+  return { list: applyFilters(base, p.filters), search };
+}
+
+export function relaxOptions(events: IssueEvent[], p: ListParams): { label: string; count: number; next: ListParams }[] {
+  const out: { label: string; count: number; next: ListParams }[] = [];
+  describeFilters(p.filters).forEach((chip) => {
+    const next = { ...p, filters: chip.clear(p.filters) };
+    const count = runList(events, next).list.length;
+    if (count > 0) out.push({ label: `‘${chip.label}’ 조건 빼기`, count, next });
+  });
+  const base = p.q.trim() ? searchEvents(events, p.q.trim(), p.ex) : null;
+  base?.facets
+    .filter((f) => !p.ex.includes(f.key))
+    .forEach((f) => {
+      const next = { ...p, ex: [...p.ex, f.key] };
+      const count = runList(events, next).list.length;
+      if (count > 0) out.push({ label: `‘${f.label}’ 조건 빼기`, count, next });
+    });
+  if (p.q.trim()) {
+    const next = { ...p, q: "", ex: [] };
+    const count = runList(events, next).list.length;
+    if (count > 0) out.push({ label: "검색어 지우기", count, next });
+  }
+  return out.sort((a, b) => b.count - a.count).slice(0, 4);
 }

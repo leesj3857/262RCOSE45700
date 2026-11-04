@@ -5,15 +5,15 @@ import { createStore } from "./store";
 
 export const overlayStore = createStore<Record<string, Overlay>>("kmi.overlay.v1", {});
 
+export const scopeStore = createStore<{ scope: Scope }>(null, { scope: DEFAULT_SCOPE });
+
 export type Prefs = {
-  scope: Scope;
   dismissedRecs: string[];
   recentSearches: string[];
   savedSearches: string[];
 };
 
 export const prefsStore = createStore<Prefs>("kmi.prefs.v1", {
-  scope: DEFAULT_SCOPE,
   dismissedRecs: [],
   recentSearches: [],
   savedSearches: [],
@@ -22,6 +22,7 @@ export const prefsStore = createStore<Prefs>("kmi.prefs.v1", {
 export function resetUserData() {
   overlayStore.reset();
   prefsStore.reset();
+  scopeStore.reset();
 }
 
 export function patchOverlay(id: string, patch: Overlay) {
@@ -55,7 +56,11 @@ export function restoreOverlay(snap: Record<string, Overlay | undefined>) {
 }
 
 export function setScope(patch: Partial<Scope>) {
-  prefsStore.set((p) => ({ ...p, scope: { ...p.scope, ...patch } }));
+  scopeStore.set((s) => ({ scope: { ...s.scope, ...patch } }));
+}
+
+export function resetScope() {
+  scopeStore.reset();
 }
 
 export function setStatus(ids: string[], status: Status) {

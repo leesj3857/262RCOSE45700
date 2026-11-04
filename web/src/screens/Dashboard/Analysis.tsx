@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ArrowRight, ChartNoAxesColumn, Copy, Download, Eye, Lightbulb } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
+import { ArrowRight, Ellipsis, Eye, Lightbulb, ScanText } from "lucide-react";
 import type { EventTypeId, IssueEvent } from "@/types/analytics";
 import {
   CAUSE_BY_ID,
@@ -14,7 +14,6 @@ import {
 } from "@/lib/analytics";
 import { buildRecommendations } from "@/lib/recommendations";
 import { dayOf, weekdayLabel } from "@/lib/dates";
-import { copyText, downloadText, eventsToCsv, summaryText } from "@/lib/exporters";
 import { eventsHref } from "@/lib/filters";
 import { baselineName, periodLabel } from "@/lib/scope";
 import { navigate, type HashRoute } from "@/lib/useHashRoute";
@@ -24,24 +23,16 @@ import { showToast } from "@/state/toast";
 import { useScopeData } from "@/state/useScopeData";
 import { prefsStore, restoreRec, setScope } from "@/state/userData";
 import Delta from "./parts/Delta";
+import MoreSheet from "./parts/MoreSheet";
 import PageHeader from "./parts/PageHeader";
 import RecCard from "./parts/RecCard";
 import ScopeBar from "./parts/ScopeBar";
 import Segmented from "./parts/Segmented";
 import Sparkline from "./parts/Sparkline";
 
-const JUMPS = [
-  { id: "recs", label: "추천 조치" },
-  { id: "trend", label: "주간 추이" },
-  { id: "time", label: "시간대" },
-  { id: "patterns", label: "반복 구간" },
-  { id: "cause", label: "원인·심각도" },
-  { id: "vehicle", label: "차량" },
-] as const;
-
 function Block({ id, title, note, children }: { id: string; title: string; note?: string; children: ReactNode }) {
   return (
-    <section id={`sec-${id}`} aria-label={title} className="scroll-mt-20 flex flex-col gap-3">
+    <section id={`sec-${id}`} aria-label={title} className="flex flex-col gap-3">
       <div className="px-1">
         <h2 className="text-[18px] font-extrabold tracking-tight">{title}</h2>
         {note && <p className="mt-0.5 text-[12px] leading-relaxed text-ink-muted">{note}</p>}
@@ -258,11 +249,30 @@ function Heatmap({ events }: { events: IssueEvent[] }) {
   );
 }
 
+type Tab = "recs" | "trend" | "cause" | "vehicle";
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: "recs", label: "추천" },
+  { id: "trend", label: "추이·시간" },
+  { id: "cause", label: "원인·구간" },
+  { id: "vehicle", label: "차량·품질" },
+];
+
+const ALIAS: Record<string, Tab> = { recs: "recs", trend: "trend", time: "trend", cause: "cause", patterns: "cause", vehicle: "vehicle" };
+
+const SUBS: Record<Tab, string> = {
+  recs: "데이터에서 찾은 개선 포인트예요",
+  trend: "언제 늘고 줄었는지 살펴봐요",
+  cause: "무엇이, 어디서 원인인지 살펴봐요",
+  vehicle: "차량별 차이와 자동 정리 품질이에요",
+};
+
 export default function Analysis({ route }: { route: HashRoute }) {
   const { scope, range, events, baseline, scopedAll, all } = useScopeData();
   const { dismissedRecs } = prefsStore.use();
   const [showHidden, setShowHidden] = useState(false);
-  const section = route.params.get("s");
+  const [more, setMore] = useState(false);
+  const tab = ALIAS[route.params.get("s") ?? ""] ?? "recs";
 
   const summary = useMemo(() => summarize(events, baseline, range), [events, baseline, range]);
   const allRecs = useMemo(() => buildRecommendations({ events, scopedAll, range }), [events, scopedAll, range]);
@@ -271,286 +281,312 @@ export default function Analysis({ route }: { route: HashRoute }) {
   const vStats = useMemo(() => vehicleStats(events, baseline, range), [events, baseline, range]);
   const fleet = fleetRate(vStats);
 
-  useEffect(() => {
-    if (!section) return;
-    const t = window.setTimeout(() => document.getElementById(`sec-${section}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
-    return () => window.clearTimeout(t);
-  }, [section]);
-
   const total = events.length;
-  const byArea = (cause: string) =>
-    AREAS.map((a) => events.filter((e) => e.cause === cause && ZONE_BY_ID[e.zoneId].area === a.id).length);
+  const byArea = (cause: string) => AREAS.map((a) => events.filter((e) => e.cause === cause && ZONE_BY_ID[e.zoneId].area === a.id).length);
   const weather = ["맑음", "흐림", "비", ""].map((w) => ({ label: w || "미기록", n: events.filter((e) => e.weather === w).length }));
-  const rain = weather[2].n;
-  const rainRatio = total ? rain / total / 0.12 : 0;
+  const rainRatio = total ? weather[2].n / total / 0.12 : 0;
   const compareName = baselineName(scope);
   const maxCause = Math.max(1, ...CAUSES.map((c) => events.filter((e) => e.cause === c.id).length));
+  const maxType = Math.max(1, ...summary.byType.map((t) => t.count));
   const opRows = OPERATORS.map((o) => ({ ...o, n: events.filter((e) => e.operatorId === o.id).length })).sort((a, b) => b.n - a.n);
   const maxOp = Math.max(1, ...opRows.map((o) => o.n));
   const maxRate = Math.max(0.1, ...vStats.map((v) => v.rate));
+  const fields = events.flatMap((e) => e.fields);
+  const autoRate = fields.length ? Math.round((fields.filter((f) => f.value).length / fields.length) * 100) : 0;
+  const avgStt = total ? Math.round((events.reduce((a, e) => a + e.sttConfidence, 0) / total) * 100) : 0;
+  const edited = fields.filter((f) => f.edited).length;
 
   function vehicleWeekly(id: string): number[] {
     return Array.from({ length: 8 }, (_, i) => {
-      const start = new Date(Date.UTC(2026, 8, 7 + i * 7));
-      const s = start.toISOString().slice(0, 10);
+      const s = new Date(Date.UTC(2026, 8, 7 + i * 7)).toISOString().slice(0, 10);
       const e = new Date(Date.UTC(2026, 8, 7 + i * 7 + 6)).toISOString().slice(0, 10);
       return all.filter((ev) => ev.vehicleId === id && dayOf(ev.occurredAt) >= s && dayOf(ev.occurredAt) <= e).length;
     });
   }
 
+  const setTab = (t: Tab) => navigate(`/admin/analysis?s=${t}`, true);
+
   return (
     <>
-      <PageHeader eyebrow="데이터로 보는 개선 포인트" title="분석" />
+      <PageHeader
+        title="분석"
+        sub={SUBS[tab]}
+        right={
+          <button type="button" onClick={() => setMore(true)} aria-label="더보기와 도움말" className="flex size-11 items-center justify-center rounded-full bg-surface active:bg-line">
+            <Ellipsis className="size-5" aria-hidden="true" />
+          </button>
+        }
+      />
       <ScopeBar />
+      <MoreSheet open={more} onClose={() => setMore(false)} />
 
-      <div className="flex flex-col gap-8 px-5 pt-4 pb-12">
-        <nav aria-label="분석 바로가기" className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 py-0.5">
-          {JUMPS.map((j) => (
-            <button
-              key={j.id}
-              type="button"
-              onClick={() => document.getElementById(`sec-${j.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
-              className="h-10 shrink-0 rounded-full bg-surface px-4 text-[14px] font-bold text-ink-sub active:bg-line"
-            >
-              {j.label}
-            </button>
-          ))}
-        </nav>
+      <div className="flex flex-col gap-6 px-5 pt-4 pb-12">
+        <Segmented label="분석 종류" value={tab} onChange={setTab} options={TABS} />
 
-        <Block id="recs" title="추천 조치" note={recs.length ? `${periodLabel(scope)} 데이터에서 찾은 개선 포인트 ${recs.length}건` : undefined}>
-          {recs.length === 0 ? (
-            <div className="flex items-center gap-3 rounded-[22px] bg-surface p-4 text-[14px] text-ink-sub">
-              <Lightbulb className="size-5 shrink-0" aria-hidden="true" />
-              {total === 0 ? "이 범위에는 이벤트가 없어요." : "지금 바로 조치할 항목이 없어요. 기간을 넓혀 보면 더 많은 패턴이 보여요."}
-            </div>
-          ) : (
-            recs.map((r) => <RecCard key={r.id} rec={r} detailed />)
-          )}
-          {hidden.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <button type="button" onClick={() => setShowHidden((v) => !v)} className="h-10 self-start rounded-full px-3 text-[13px] font-bold text-ink-sub active:bg-surface">
-                숨긴 추천 {hidden.length}건 {showHidden ? "접기" : "보기"}
-              </button>
-              {showHidden &&
-                hidden.map((r) => (
-                  <div key={r.id} className="flex items-center justify-between gap-3 rounded-[18px] bg-surface px-4 py-3">
-                    <span className="min-w-0 truncate text-[14px] font-semibold text-ink-sub">{r.title}</span>
-                    <button type="button" onClick={() => restoreRec(r.id)} className="h-9 shrink-0 rounded-full bg-white px-3.5 text-[13px] font-bold shadow-sm">
-                      다시 보기
-                    </button>
-                  </div>
-                ))}
-            </div>
-          )}
-        </Block>
-
-        <Block id="trend" title="주간 추이" note="최근 8주의 흐름이에요. 막대를 눌러 주별 변화를 보세요. 선택한 범위 밖의 주는 연하게 표시돼요.">
-          <TrendChart events={scopedAll} rangeStart={range.start} rangeEnd={range.end} />
-        </Block>
-
-        <Block id="time" title="요일·시간대" note="언제 이벤트가 몰리는지 보여줘요 (운행 시간 8–22시)">
-          <Heatmap events={events} />
-        </Block>
-
-        <Block id="patterns" title="반복 구간" note="같은 장소·같은 원인으로 반복된 구간 · 최근 8주 추이">
-          {summary.patterns.length === 0 ? (
-            <p className="rounded-[22px] bg-surface p-4 text-[14px] text-ink-sub">이 범위에서는 반복된 패턴이 없어요.</p>
-          ) : (
-            <ul className="flex flex-col gap-2.5">
-              {summary.patterns.map((p) => {
-                const diff = p.prevCount === null ? null : p.count - p.prevCount;
-                return (
-                  <li key={`${p.zoneId}-${p.cause}`}>
-                    <div className="flex items-center gap-3 rounded-[22px] border border-line bg-white p-4">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[16px] font-bold">{ZONE_BY_ID[p.zoneId].name}</p>
-                        <p className="mt-0.5 text-[13px] text-ink-muted">{CAUSE_BY_ID[p.cause].label}</p>
-                        <div className="mt-2 flex gap-1.5">
-                          <a href={`#${eventsHref({ zone: [p.zoneId], cause: [p.cause] })}`} className="inline-flex h-9 items-center rounded-full bg-surface px-3.5 text-[12px] font-bold active:bg-line">
-                            이벤트
-                          </a>
-                          <a href={`#/admin/map?zone=${p.zoneId}`} className="inline-flex h-9 items-center rounded-full bg-surface px-3.5 text-[12px] font-bold active:bg-line">
-                            지도
-                          </a>
-                        </div>
-                      </div>
-                      <Sparkline values={zoneCauseSeries(scopedAll, p.zoneId, p.cause)} label="최근 8주 추이" fill="rgba(254,229,0,0.35)" width={92} height={36} />
-                      <div className="w-[52px] text-right">
-                        <p className="num text-[22px] leading-none font-extrabold">
-                          {p.count}
-                          <span className="ml-0.5 text-[13px] font-bold">회</span>
-                        </p>
-                        <p className={`num mt-1 text-[12px] font-bold ${diff === null || diff === 0 ? "text-ink-muted" : diff > 0 ? "text-danger" : "text-ok"}`}>
-                          {diff === null ? "—" : diff === 0 ? "동일" : `${diff > 0 ? "+" : ""}${diff}`}
-                        </p>
-                      </div>
+        {tab === "recs" && (
+          <Block id="recs" title="추천 조치" note={recs.length ? `${periodLabel(scope)} 데이터에서 찾은 ${recs.length}건이에요. 급한 순서로 보여줘요.` : undefined}>
+            {recs.length === 0 ? (
+              <div className="flex items-center gap-3 rounded-[22px] bg-surface p-4 text-[14px] text-ink-sub">
+                <Lightbulb className="size-5 shrink-0" aria-hidden="true" />
+                {total === 0 ? "이 범위에는 이벤트가 없어요." : "지금 바로 조치할 항목이 없어요. 기간을 넓혀 보면 더 많은 패턴이 보여요."}
+              </div>
+            ) : (
+              recs.map((r) => <RecCard key={r.id} rec={r} detailed />)
+            )}
+            {hidden.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <button type="button" onClick={() => setShowHidden((v) => !v)} className="h-11 self-start rounded-full px-3 text-[13px] font-bold text-ink-sub active:bg-surface">
+                  숨긴 추천 {hidden.length}건 {showHidden ? "접기" : "보기"}
+                </button>
+                {showHidden &&
+                  hidden.map((r) => (
+                    <div key={r.id} className="flex items-center justify-between gap-3 rounded-[18px] bg-surface px-4 py-3">
+                      <span className="min-w-0 truncate text-[14px] font-semibold text-ink-sub">{r.title}</span>
+                      <button type="button" onClick={() => restoreRec(r.id)} className="h-10 shrink-0 rounded-full bg-white px-3.5 text-[13px] font-bold shadow-sm">
+                        다시 보기
+                      </button>
                     </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Block>
+                  ))}
+              </div>
+            )}
+          </Block>
+        )}
 
-        <Block id="cause" title="원인·심각도·날씨" note={compareName ? `${compareName} 대비 변화와 지역별 비중을 함께 보여줘요` : "지역별 비중을 보여줘요"}>
-          <div className="rounded-panel border border-line bg-white p-5">
-            <div className="mb-3 flex items-center gap-3 text-[12px] font-semibold text-ink-sub">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="size-2.5 rounded-sm bg-kakao" aria-hidden="true" />
-                {AREAS[0].label}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="size-2.5 rounded-sm bg-navy" aria-hidden="true" />
-                {AREAS[1].label}
-              </span>
-            </div>
-            <ul className="flex flex-col gap-1">
-              {CAUSES.map((c) => {
-                const n = events.filter((e) => e.cause === c.id).length;
-                const [gn, sb] = byArea(c.id);
-                const prev = baseline ? baseline.filter((e) => e.cause === c.id).length : null;
-                return (
-                  <li key={c.id}>
-                    <a href={`#${eventsHref({ cause: [c.id] })}`} className="flex flex-col gap-1.5 rounded-[16px] px-2 py-2.5 active:bg-surface">
-                      <span className="flex items-center justify-between gap-2">
-                        <span className="text-[14px] font-bold">{c.label}</span>
-                        <span className="flex items-center gap-2">
-                          <Delta pct={pctChange(n, prev)} />
-                          <span className="num w-8 text-right text-[15px] font-extrabold">{n}</span>
-                        </span>
+        {tab === "trend" && (
+          <>
+            <Block id="trend" title="주간 추이" note="최근 8주의 흐름이에요. 막대를 눌러 주별 변화를 보세요. 보기 범위 밖의 주는 연하게 보여요.">
+              <TrendChart events={scopedAll} rangeStart={range.start} rangeEnd={range.end} />
+            </Block>
+            <Block id="time" title="요일·시간대" note="언제 이벤트가 몰리는지 보여줘요 (운행 시간 8–22시)">
+              <Heatmap events={events} />
+            </Block>
+          </>
+        )}
+
+        {tab === "cause" && (
+          <>
+            <Block id="patterns" title="반복 구간" note="같은 장소·같은 원인으로 반복된 곳이에요. 최근 8주 추이도 함께 봐요.">
+              {summary.patterns.length === 0 ? (
+                <p className="rounded-[22px] bg-surface p-4 text-[14px] text-ink-sub">이 범위에서는 반복된 패턴이 없어요.</p>
+              ) : (
+                <ul className="flex flex-col gap-2.5">
+                  {summary.patterns.map((p) => {
+                    const diff = p.prevCount === null ? null : p.count - p.prevCount;
+                    return (
+                      <li key={`${p.zoneId}-${p.cause}`}>
+                        <div className="flex items-center gap-3 rounded-[22px] border border-line bg-white p-4">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[16px] font-bold">{ZONE_BY_ID[p.zoneId].name}</p>
+                            <p className="mt-0.5 text-[13px] text-ink-muted">{CAUSE_BY_ID[p.cause].label}</p>
+                            <div className="mt-2 flex gap-1.5">
+                              <a href={`#${eventsHref({ zone: [p.zoneId], cause: [p.cause] })}`} className="inline-flex h-10 items-center rounded-full bg-surface px-4 text-[13px] font-bold active:bg-line">
+                                이벤트
+                              </a>
+                              <a href={`#/admin/map?zone=${p.zoneId}`} className="inline-flex h-10 items-center rounded-full bg-surface px-4 text-[13px] font-bold active:bg-line">
+                                지도
+                              </a>
+                            </div>
+                          </div>
+                          <Sparkline values={zoneCauseSeries(scopedAll, p.zoneId, p.cause)} label="최근 8주 추이" fill="rgba(254,229,0,0.35)" width={84} height={36} />
+                          <div className="w-[52px] text-right">
+                            <p className="num text-[22px] leading-none font-extrabold">
+                              {p.count}
+                              <span className="ml-0.5 text-[13px] font-bold">회</span>
+                            </p>
+                            <p className={`num mt-1 text-[12px] font-bold ${diff === null || diff === 0 ? "text-ink-muted" : diff > 0 ? "text-danger" : "text-ok"}`}>
+                              {diff === null ? "—" : diff === 0 ? "동일" : `${diff > 0 ? "+" : ""}${diff}`}
+                            </p>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Block>
+
+            <Block id="cause" title="원인별" note={compareName ? `${compareName} 대비 변화와 지역별 비중이에요` : "지역별 비중이에요"}>
+              <div className="rounded-panel border border-line bg-white p-5">
+                <div className="mb-3 flex items-center gap-3 text-[12px] font-semibold text-ink-sub">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="size-2.5 rounded-sm bg-kakao" aria-hidden="true" />
+                    {AREAS[0].label}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="size-2.5 rounded-sm bg-navy" aria-hidden="true" />
+                    {AREAS[1].label}
+                  </span>
+                </div>
+                <ul className="flex flex-col gap-1">
+                  {CAUSES.map((c) => {
+                    const n = events.filter((e) => e.cause === c.id).length;
+                    const [gn, sb] = byArea(c.id);
+                    const prev = baseline ? baseline.filter((e) => e.cause === c.id).length : null;
+                    return (
+                      <li key={c.id}>
+                        <a href={`#${eventsHref({ cause: [c.id] })}`} className="flex flex-col gap-1.5 rounded-[16px] px-2 py-2.5 active:bg-surface">
+                          <span className="flex items-center justify-between gap-2">
+                            <span className="text-[14px] font-bold">{c.label}</span>
+                            <span className="flex items-center gap-2">
+                              <Delta pct={pctChange(n, prev)} />
+                              <span className="num w-8 text-right text-[15px] font-extrabold">{n}</span>
+                            </span>
+                          </span>
+                          <span className="flex h-2.5 overflow-hidden rounded-full bg-surface" style={{ width: `${Math.max(4, (n / maxCause) * 100)}%` }}>
+                            <span className="bg-kakao" style={{ width: `${n ? (gn / n) * 100 : 0}%` }} />
+                            <span className="bg-navy" style={{ width: `${n ? (sb / n) * 100 : 0}%` }} />
+                          </span>
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </Block>
+
+            <Block id="type" title="유형별">
+              <ul className="flex flex-col rounded-panel border border-line bg-white p-2">
+                {summary.byType.map((t) => (
+                  <li key={t.id}>
+                    <a href={`#${eventsHref({ type: [t.id] })}`} className="flex items-center gap-3 rounded-[18px] px-3 py-3 active:bg-surface">
+                      <span className="w-[72px] shrink-0 text-[14px] font-bold text-ink-sub">{t.label}</span>
+                      <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface">
+                        <span className="block h-full rounded-full" style={{ width: `${(t.count / maxType) * 100}%`, background: TYPE_COLORS[t.id as EventTypeId] }} />
                       </span>
-                      <span className="flex h-2.5 overflow-hidden rounded-full bg-surface" style={{ width: `${Math.max(4, (n / maxCause) * 100)}%` }}>
-                        <span className="bg-kakao" style={{ width: `${n ? (gn / n) * 100 : 0}%` }} />
-                        <span className="bg-navy" style={{ width: `${n ? (sb / n) * 100 : 0}%` }} />
+                      <span className="num w-9 shrink-0 text-right text-[16px] font-extrabold">{t.count}</span>
+                      <span className="w-[62px] shrink-0 text-right">
+                        <Delta pct={pctChange(t.count, t.prev)} className="justify-end" />
                       </span>
                     </a>
                   </li>
-                );
-              })}
-            </ul>
-          </div>
+                ))}
+              </ul>
+            </Block>
 
-          <div className="rounded-panel border border-line bg-white p-5">
-            <h3 className="text-[15px] font-extrabold">심각도</h3>
-            <div className="mt-3 flex h-4 overflow-hidden rounded-full bg-surface" role="img" aria-label={`사고 ${summary.bySeverity.high}건, 주의 ${summary.bySeverity.mid}건, 낮음 ${summary.bySeverity.low}건`}>
-              <span className="bg-danger" style={{ width: `${total ? (summary.bySeverity.high / total) * 100 : 0}%` }} />
-              <span className="bg-warning" style={{ width: `${total ? (summary.bySeverity.mid / total) * 100 : 0}%` }} />
-              <span className="bg-ink-muted/40" style={{ width: `${total ? (summary.bySeverity.low / total) * 100 : 0}%` }} />
-            </div>
-            <ul className="mt-3 grid grid-cols-3 gap-2 text-center">
-              {([
-                ["high", "사고", "bg-danger"],
-                ["mid", "주의", "bg-warning"],
-                ["low", "낮음", "bg-ink-muted/40"],
-              ] as const).map(([k, label, color]) => (
-                <li key={k}>
-                  <a href={`#${eventsHref({ sev: [k] })}`} className="flex flex-col items-center gap-1 rounded-[16px] bg-surface py-3 active:bg-line">
-                    <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-ink-sub">
-                      <span className={`size-2.5 rounded-full ${color}`} aria-hidden="true" />
-                      {label}
-                    </span>
-                    <span className="num text-[20px] font-extrabold">{summary.bySeverity[k]}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+            <Block id="severity" title="심각도·날씨">
+              <div className="rounded-panel border border-line bg-white p-5">
+                <h3 className="text-[15px] font-extrabold">심각도</h3>
+                <div className="mt-3 flex h-4 overflow-hidden rounded-full bg-surface" role="img" aria-label={`사고 ${summary.bySeverity.high}건, 주의 ${summary.bySeverity.mid}건, 낮음 ${summary.bySeverity.low}건`}>
+                  <span className="bg-danger" style={{ width: `${total ? (summary.bySeverity.high / total) * 100 : 0}%` }} />
+                  <span className="bg-warning" style={{ width: `${total ? (summary.bySeverity.mid / total) * 100 : 0}%` }} />
+                  <span className="bg-ink-muted/40" style={{ width: `${total ? (summary.bySeverity.low / total) * 100 : 0}%` }} />
+                </div>
+                <ul className="mt-3 grid grid-cols-3 gap-2 text-center">
+                  {(
+                    [
+                      ["high", "사고", "bg-danger"],
+                      ["mid", "주의", "bg-warning"],
+                      ["low", "낮음", "bg-ink-muted/40"],
+                    ] as const
+                  ).map(([k, label, color]) => (
+                    <li key={k}>
+                      <a href={`#${eventsHref({ sev: [k] })}`} className="flex flex-col items-center gap-1 rounded-[16px] bg-surface py-3 active:bg-line">
+                        <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-ink-sub">
+                          <span className={`size-2.5 rounded-full ${color}`} aria-hidden="true" />
+                          {label}
+                        </span>
+                        <span className="num text-[20px] font-extrabold">{summary.bySeverity[k]}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-          <div className="rounded-panel border border-line bg-white p-5">
-            <h3 className="text-[15px] font-extrabold">날씨</h3>
-            <ul className="mt-3 flex flex-col gap-2.5">
-              {weather.map((w) => (
-                <li key={w.label}>
-                  <a href={`#${eventsHref({ wx: [w.label] })}`} className="flex items-center gap-3 active:opacity-70">
-                    <span className="w-12 shrink-0 text-[14px] font-semibold text-ink-sub">{w.label}</span>
-                    <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface">
-                      <span className={`block h-full rounded-full ${w.label === "비" ? "bg-navy" : "bg-kakao"}`} style={{ width: `${total ? (w.n / total) * 100 : 0}%` }} />
-                    </span>
-                    <span className="num w-16 shrink-0 text-right text-[14px] font-extrabold">
-                      {w.n}건 <span className="text-[11px] font-semibold text-ink-muted">{total ? Math.round((w.n / total) * 100) : 0}%</span>
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-            {rainRatio >= 1.2 && <p className="mt-3 rounded-[14px] bg-kakao-soft p-3 text-[13px] leading-relaxed">비 오는 날 이벤트 비중이 운행 시간 중 비 비중(12%, 예시 값)의 <b className="num">{rainRatio.toFixed(1)}배</b>예요.</p>}
-          </div>
-        </Block>
+              <div className="rounded-panel border border-line bg-white p-5">
+                <h3 className="text-[15px] font-extrabold">날씨</h3>
+                <ul className="mt-3 flex flex-col gap-2.5">
+                  {weather.map((w) => (
+                    <li key={w.label}>
+                      <a href={`#${eventsHref({ wx: [w.label] })}`} className="flex items-center gap-3 active:opacity-70">
+                        <span className="w-12 shrink-0 text-[14px] font-semibold text-ink-sub">{w.label}</span>
+                        <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface">
+                          <span className={`block h-full rounded-full ${w.label === "비" ? "bg-navy" : "bg-kakao"}`} style={{ width: `${total ? (w.n / total) * 100 : 0}%` }} />
+                        </span>
+                        <span className="num w-[72px] shrink-0 text-right text-[14px] font-extrabold">
+                          {w.n}건 <span className="text-[11px] font-semibold text-ink-muted">{total ? Math.round((w.n / total) * 100) : 0}%</span>
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                {rainRatio >= 1.2 && (
+                  <p className="mt-3 rounded-[14px] bg-kakao-soft p-3 text-[13px] leading-relaxed">
+                    비 오는 날 이벤트 비중이 운행 시간 중 비 비중(12%, 예시 값)의 <b className="num">{rainRatio.toFixed(1)}배</b>예요.
+                  </p>
+                )}
+              </div>
+            </Block>
+          </>
+        )}
 
-        <Block id="vehicle" title="차량·오퍼레이터" note="주행 거리가 달라서 1,000km당 이벤트 수로 비교해요 (주행 거리는 예시 값)">
-          <ul className="flex flex-col gap-2.5">
-            {vStats.map((v) => (
-              <li key={v.id}>
-                <a href={`#${eventsHref({ veh: [v.id] })}`} className="flex items-center gap-3 rounded-[22px] border border-line bg-white p-4 active:bg-surface">
-                  <div className="min-w-0 flex-1">
-                    <p className="flex items-center gap-2">
-                      <span className="num text-[16px] font-extrabold">{v.id}</span>
-                      <span className={`num inline-flex h-5 items-center rounded-full px-2 text-[11px] font-bold ${v.versusFleet > 15 ? "bg-danger/10 text-danger" : v.versusFleet < -15 ? "bg-[#e6f6ed] text-[#0f7a42]" : "bg-surface text-ink-sub"}`}>
-                        평균 대비 {v.versusFleet > 0 ? "+" : ""}
-                        {v.versusFleet}%
+        {tab === "vehicle" && (
+          <>
+            <Block id="vehicle" title="차량별" note="주행 거리가 달라서 1,000km당 이벤트 수로 비교해요 (주행 거리는 예시 값)">
+              <ul className="flex flex-col gap-2.5">
+                {vStats.map((v) => (
+                  <li key={v.id}>
+                    <a href={`#${eventsHref({ veh: [v.id] })}`} className="flex items-center gap-3 rounded-[22px] border border-line bg-white p-4 active:bg-surface">
+                      <div className="min-w-0 flex-1">
+                        <p className="flex items-center gap-2">
+                          <span className="num text-[16px] font-extrabold">{v.id}</span>
+                          <span className={`num inline-flex h-5 items-center rounded-full px-2 text-[11px] font-bold ${v.versusFleet > 15 ? "bg-danger/10 text-danger" : v.versusFleet < -15 ? "bg-[#e6f6ed] text-[#0f7a42]" : "bg-surface text-ink-sub"}`}>
+                            평균 대비 {v.versusFleet > 0 ? "+" : ""}
+                            {v.versusFleet}%
+                          </span>
+                        </p>
+                        <p className="num mt-0.5 text-[12px] text-ink-muted">
+                          {v.count}건 · {v.km.toLocaleString()}km · 1,000km당 {v.rate.toFixed(1)}건
+                        </p>
+                        <span className="mt-2 block h-2 overflow-hidden rounded-full bg-surface">
+                          <span className="block h-full rounded-full bg-kakao" style={{ width: `${(v.rate / maxRate) * 100}%` }} />
+                        </span>
+                      </div>
+                      <Sparkline values={vehicleWeekly(v.id)} label={`${v.id} 최근 8주 추이`} width={72} height={32} />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <p className="num px-1 text-[12px] text-ink-muted">전체 평균 1,000km당 {fleet.toFixed(1)}건</p>
+            </Block>
+
+            <Block id="operator" title="오퍼레이터별 기록 수">
+              <div className="rounded-panel border border-line bg-white p-5">
+                <ul className="flex flex-col gap-2.5">
+                  {opRows.map((o) => (
+                    <li key={o.id} className="flex items-center gap-3">
+                      <span className="w-12 shrink-0 text-[14px] font-semibold text-ink-sub">{o.name}</span>
+                      <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface">
+                        <span className="block h-full rounded-full bg-navy" style={{ width: `${(o.n / maxOp) * 100}%` }} />
                       </span>
-                    </p>
-                    <p className="num mt-0.5 text-[12px] text-ink-muted">
-                      {v.count}건 · {v.km.toLocaleString()}km · 1,000km당 {v.rate.toFixed(1)}건
-                    </p>
-                    <span className="mt-2 block h-2 overflow-hidden rounded-full bg-surface">
-                      <span className="block h-full rounded-full bg-kakao" style={{ width: `${(v.rate / maxRate) * 100}%` }} />
-                    </span>
+                      <span className="num w-8 shrink-0 text-right text-[14px] font-extrabold">{o.n}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Block>
+
+            <Block id="quality" title="자동 정리 품질" note="근거 발화가 없는 항목은 지어내지 않고 비워 두기 때문에 자동 채움 비율이 100%가 되지 않아요.">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                {[
+                  { v: `${autoRate}%`, l: "항목 자동 채움" },
+                  { v: `${avgStt}%`, l: "음성 인식 신뢰도" },
+                  { v: String(edited), l: "직접 수정 항목" },
+                ].map((c) => (
+                  <div key={c.l} className="rounded-[20px] bg-surface px-2 py-4">
+                    <ScanText className="mx-auto mb-1.5 size-4 text-ink-muted" aria-hidden="true" />
+                    <p className="num text-[22px] leading-none font-extrabold">{c.v}</p>
+                    <p className="mt-1.5 text-[12px] font-semibold text-ink-muted">{c.l}</p>
                   </div>
-                  <Sparkline values={vehicleWeekly(v.id)} label={`${v.id} 최근 8주 추이`} width={72} height={32} />
-                </a>
-              </li>
-            ))}
-          </ul>
-          <p className="num px-1 text-[12px] text-ink-muted">전체 평균 1,000km당 {fleet.toFixed(1)}건</p>
+                ))}
+              </div>
+            </Block>
+          </>
+        )}
 
-          <div className="rounded-panel border border-line bg-white p-5">
-            <h3 className="text-[15px] font-extrabold">오퍼레이터별 기록 수</h3>
-            <ul className="mt-3 flex flex-col gap-2.5">
-              {opRows.map((o) => (
-                <li key={o.id} className="flex items-center gap-3">
-                  <span className="w-12 shrink-0 text-[14px] font-semibold text-ink-sub">{o.name}</span>
-                  <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface">
-                    <span className="block h-full rounded-full bg-navy" style={{ width: `${(o.n / maxOp) * 100}%` }} />
-                  </span>
-                  <span className="num w-8 shrink-0 text-right text-[14px] font-extrabold">{o.n}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Block>
-
-        <section aria-label="보고서 내보내기" className="flex flex-col gap-3 rounded-panel bg-navy p-5 text-white">
-          <div className="flex items-center gap-2">
-            <ChartNoAxesColumn className="size-5 text-kakao" aria-hidden="true" />
-            <h2 className="text-[18px] font-extrabold">이 분석 공유하기</h2>
-          </div>
-          <p className="text-[13px] leading-relaxed text-white/70">지금 보고 있는 범위의 요약을 복사하거나, 이벤트 원본을 CSV로 내려받을 수 있어요.</p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={async () => {
-                const ok = await copyText(summaryText(summary, range, periodLabel(scope)));
-                showToast(ok ? "요약을 복사했어요" : "복사하지 못했어요");
-              }}
-              className="flex h-12 items-center justify-center gap-1.5 rounded-full bg-kakao text-[14px] font-extrabold text-ink active:bg-kakao-press"
-            >
-              <Copy className="size-4" aria-hidden="true" />
-              요약 복사
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                downloadText(`주행이슈_${range.start}_${range.end}.csv`, eventsToCsv(events));
-                showToast(`${events.length}건을 CSV로 내보냈어요`);
-              }}
-              className="flex h-12 items-center justify-center gap-1.5 rounded-full bg-white/12 text-[14px] font-bold active:bg-white/20"
-            >
-              <Download className="size-4" aria-hidden="true" />
-              CSV 내보내기
-            </button>
-          </div>
-        </section>
+        <a href="#/admin/events" className="flex h-12 items-center justify-center gap-2 rounded-full bg-surface text-[14px] font-bold text-ink-sub active:bg-line">
+          이벤트 목록에서 직접 찾아보기
+          <ArrowRight className="size-4" aria-hidden="true" />
+        </a>
       </div>
     </>
   );

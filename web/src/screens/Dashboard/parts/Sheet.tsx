@@ -21,14 +21,14 @@ export default function Sheet({ open, onClose, title, children, footer }: Props)
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement as HTMLElement | null;
-    panel.current?.focus();
+    panel.current?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeRef.current();
     };
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
-      previous?.focus?.();
+      previous?.focus?.({ preventScroll: true });
     };
   }, [open]);
 
@@ -57,7 +57,7 @@ export default function Sheet({ open, onClose, title, children, footer }: Props)
             <X className="size-5" aria-hidden="true" />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5">{children}</div>
+        <div className="min-h-0 shrink overflow-y-auto overscroll-contain px-5 pb-5">{children}</div>
         {footer && <div className="shrink-0 border-t border-line bg-white px-5 py-3">{footer}</div>}
       </div>
     </div>,

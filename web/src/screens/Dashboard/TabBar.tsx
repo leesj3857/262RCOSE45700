@@ -1,19 +1,18 @@
-import { ChartColumn, LayoutDashboard, List, Map as MapIcon, Search } from "lucide-react";
+import { ChartColumn, LayoutDashboard, List, Map as MapIcon } from "lucide-react";
 
-export type TabId = "summary" | "events" | "analysis" | "map" | "search";
+export type TabId = "summary" | "events" | "analysis" | "map";
 
 const TABS = [
   { id: "summary", label: "요약", href: "/admin", Icon: LayoutDashboard },
   { id: "events", label: "이벤트", href: "/admin/events", Icon: List },
   { id: "analysis", label: "분석", href: "/admin/analysis", Icon: ChartColumn },
   { id: "map", label: "지도", href: "/admin/map", Icon: MapIcon },
-  { id: "search", label: "검색", href: "/admin/search", Icon: Search },
 ] as const;
 
 export default function TabBar({ active }: { active: TabId }) {
   return (
     <nav aria-label="관리자 메뉴" className="shrink-0 border-t border-line bg-white pb-[env(safe-area-inset-bottom)]">
-      <ul className="grid grid-cols-5">
+      <ul className="grid grid-cols-4">
         {TABS.map(({ id, label, href, Icon }) => {
           const on = id === active;
           return (

@@ -1,13 +1,13 @@
 import { useState, type ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
 import type { Filters } from "@/lib/filters";
 import { EMPTY_FILTERS, SEVERITY_LABEL, STATUS_LABEL } from "@/lib/filters";
 import { weekdayLabel } from "@/lib/dates";
-import { AREAS, CAUSES, EVENT_TYPES, HOUR_WINDOWS, VEHICLES, ZONES } from "@/mockData/taxonomy";
+import { AREAS, CAUSES, EVENT_TYPES, HOUR_WINDOWS, ZONES } from "@/mockData/taxonomy";
 import Chip from "./Chip";
 import Sheet from "./Sheet";
 
 type Props = {
-  open: boolean;
   onClose: () => void;
   filters: Filters;
   onApply: (f: Filters) => void;
@@ -21,9 +21,32 @@ function toggle<T>(list: T[], value: T): T[] {
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section aria-label={title} className="mt-5 first:mt-1">
-      <h3 className="mb-2 text-[13px] font-bold text-ink-muted">{title}</h3>
+      <h3 className="mb-2 text-[13px] font-bold text-ink-sub">{title}</h3>
       <div className="flex flex-wrap gap-2">{children}</div>
     </section>
+  );
+}
+
+function Fold({ title, active, children }: { title: string; active: number; children: ReactNode }) {
+  const [open, setOpen] = useState(active > 0);
+  return (
+    <section aria-label={title} className="border-t border-line">
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="flex h-14 w-full items-center gap-2 text-left">
+        <span className="text-[15px] font-extrabold">{title}</span>
+        {active > 0 && <span className="num flex size-5 items-center justify-center rounded-full bg-kakao text-[12px] font-extrabold">{active}</span>}
+        <ChevronDown className={`ml-auto size-5 text-ink-muted transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+      </button>
+      {open && <div className="flex flex-col gap-4 pb-4">{children}</div>}
+    </section>
+  );
+}
+
+function Sub({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div>
+      <p className="mb-2 text-[12px] font-bold text-ink-muted">{title}</p>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
   );
 }
 
@@ -47,14 +70,14 @@ function Switch({ label, hint, on, onChange }: { label: string; hint: string; on
   );
 }
 
-export default function FilterSheet({ open, onClose, filters, onApply, count }: Props) {
+export default function FilterSheet({ onClose, filters, onApply, count }: Props) {
   const [draft, setDraft] = useState<Filters>(filters);
   const set = (p: Partial<Filters>) => setDraft((d) => ({ ...d, ...p }));
   const n = count(draft);
 
   return (
     <Sheet
-      open={open}
+      open
       onClose={onClose}
       title="필터"
       footer={
@@ -68,35 +91,33 @@ export default function FilterSheet({ open, onClose, filters, onApply, count }: 
           </button>
           <button
             type="button"
+            disabled={n === 0}
             onClick={() => {
               onApply(draft);
               onClose();
             }}
-            className="h-12 flex-1 rounded-full bg-kakao text-[15px] font-extrabold text-ink active:bg-kakao-press"
+            className="h-12 flex-1 rounded-full bg-kakao text-[15px] font-extrabold text-ink active:bg-kakao-press disabled:bg-line disabled:text-ink-muted"
           >
-            <span className="num">{n}</span>건 보기
+            {n === 0 ? "맞는 이벤트가 없어요" : (
+              <>
+                <span className="num">{n}</span>건 보기
+              </>
+            )}
           </button>
         </div>
       }
     >
-      <Group title="유형">
+      <Group title="어떤 사건인가요?">
         {EVENT_TYPES.map((t) => (
           <Chip key={t.id} active={draft.type.includes(t.id)} onClick={() => set({ type: toggle(draft.type, t.id) })}>
             {t.label}
           </Chip>
         ))}
       </Group>
-      <Group title="원인">
+      <Group title="왜 생겼나요?">
         {CAUSES.map((c) => (
           <Chip key={c.id} active={draft.cause.includes(c.id)} onClick={() => set({ cause: toggle(draft.cause, c.id) })}>
             {c.label}
-          </Chip>
-        ))}
-      </Group>
-      <Group title="심각도">
-        {(["high", "mid", "low"] as const).map((s) => (
-          <Chip key={s} active={draft.sev.includes(s)} onClick={() => set({ sev: toggle(draft.sev, s) })}>
-            {SEVERITY_LABEL[s]}
           </Chip>
         ))}
       </Group>
@@ -107,49 +128,58 @@ export default function FilterSheet({ open, onClose, filters, onApply, count }: 
           </Chip>
         ))}
       </Group>
-      <Group title="날씨">
-        {["맑음", "흐림", "비", "미기록"].map((w) => (
-          <Chip key={w} active={draft.wx.includes(w)} onClick={() => set({ wx: toggle(draft.wx, w) })}>
-            {w}
+      <Group title="심각도">
+        {(["high", "mid", "low"] as const).map((s) => (
+          <Chip key={s} active={draft.sev.includes(s)} onClick={() => set({ sev: toggle(draft.sev, s) })}>
+            {SEVERITY_LABEL[s]}
           </Chip>
         ))}
       </Group>
-      <Group title="시간대">
-        {HOUR_WINDOWS.map((w) => {
-          const on = draft.hr?.[0] === w.from && draft.hr?.[1] === w.to;
-          return (
-            <Chip key={w.id} active={on} onClick={() => set({ hr: on ? null : [w.from, w.to] })}>
-              {w.label}
-            </Chip>
-          );
-        })}
-      </Group>
-      <Group title="요일">
-        {Array.from({ length: 7 }, (_, i) => (
-          <Chip key={i} active={draft.wd === i} onClick={() => set({ wd: draft.wd === i ? null : i })}>
-            {weekdayLabel(i)}
-          </Chip>
-        ))}
-      </Group>
-      {AREAS.map((a) => (
-        <Group key={a.id} title={`장소 · ${a.label}`}>
-          {ZONES.filter((z) => z.area === a.id).map((z) => (
-            <Chip key={z.id} active={draft.zone.includes(z.id)} onClick={() => set({ zone: toggle(draft.zone, z.id) })}>
-              {z.name}
-            </Chip>
+
+      <div className="mt-5">
+        <Fold title="언제" active={(draft.hr ? 1 : 0) + (draft.wd !== null ? 1 : 0)}>
+          <Sub title="시간대">
+            {HOUR_WINDOWS.map((w) => {
+              const on = draft.hr?.[0] === w.from && draft.hr?.[1] === w.to;
+              return (
+                <Chip key={w.id} active={on} onClick={() => set({ hr: on ? null : [w.from, w.to] })}>
+                  {w.label}
+                </Chip>
+              );
+            })}
+          </Sub>
+          <Sub title="요일">
+            {Array.from({ length: 7 }, (_, i) => (
+              <Chip key={i} active={draft.wd === i} onClick={() => set({ wd: draft.wd === i ? null : i })}>
+                {weekdayLabel(i)}
+              </Chip>
+            ))}
+          </Sub>
+        </Fold>
+        <Fold title="어디서" active={draft.zone.length}>
+          {AREAS.map((a) => (
+            <Sub key={a.id} title={a.label}>
+              {ZONES.filter((z) => z.area === a.id).map((z) => (
+                <Chip key={z.id} active={draft.zone.includes(z.id)} onClick={() => set({ zone: toggle(draft.zone, z.id) })}>
+                  {z.name}
+                </Chip>
+              ))}
+            </Sub>
           ))}
-        </Group>
-      ))}
-      <Group title="차량">
-        {VEHICLES.map((v) => (
-          <Chip key={v.id} active={draft.veh.includes(v.id)} onClick={() => set({ veh: toggle(draft.veh, v.id) })}>
-            {v.id}
-          </Chip>
-        ))}
-      </Group>
-      <div className="mt-5 flex flex-col gap-2">
-        <Switch label="확인 필요한 항목만" hint="비어 있는 필드가 있는 이벤트" on={draft.check} onChange={(check) => set({ check })} />
-        <Switch label="즐겨찾기만" hint="별표를 표시한 이벤트" on={draft.star} onChange={(star) => set({ star })} />
+        </Fold>
+        <Fold title="날씨" active={draft.wx.length}>
+          <div className="flex flex-wrap gap-2">
+            {["맑음", "흐림", "비", "미기록"].map((w) => (
+              <Chip key={w} active={draft.wx.includes(w)} onClick={() => set({ wx: toggle(draft.wx, w) })}>
+                {w}
+              </Chip>
+            ))}
+          </div>
+        </Fold>
+        <Fold title="내가 표시한 것" active={(draft.check ? 1 : 0) + (draft.star ? 1 : 0)}>
+          <Switch label="확인 필요한 항목만" hint="비어 있는 필드가 있는 이벤트" on={draft.check} onChange={(check) => set({ check })} />
+          <Switch label="즐겨찾기만" hint="별표를 표시한 이벤트" on={draft.star} onChange={(star) => set({ star })} />
+        </Fold>
       </div>
     </Sheet>
   );

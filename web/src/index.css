@@ -165,3 +165,8 @@ a:focus-visible,
     scroll-behavior: auto !important;
   }
 }
+
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}

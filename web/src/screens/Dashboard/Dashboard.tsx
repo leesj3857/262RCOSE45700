@@ -6,7 +6,6 @@ import Analysis from "./Analysis";
 import EventDetail from "./EventDetail";
 import EventList from "./EventList";
 import MapView from "./MapView";
-import Search from "./Search";
 import Summary from "./Summary";
 import TabBar, { type TabId } from "./TabBar";
 import { SheetRootContext } from "./parts/Sheet";
@@ -17,7 +16,7 @@ function resolve(path: string): { tab: TabId; node: (route: HashRoute) => ReactE
   if (detail) return { tab: "events", node: (route) => <EventDetail key={detail[1]} id={detail[1]} route={route} /> };
   if (path === "/admin/events") return { tab: "events", node: (route) => <EventList route={route} /> };
   if (path === "/admin/analysis") return { tab: "analysis", node: (route) => <Analysis route={route} /> };
-  if (path === "/admin/search") return { tab: "search", node: (route) => <Search route={route} /> };
+  if (path === "/admin/search") return { tab: "events", node: (route) => <EventList route={{ ...route, params: new URLSearchParams("focus=1") }} /> };
   if (path === "/admin/map") return { tab: "map", node: (route) => <MapView route={route} /> };
   return { tab: "summary", node: () => <Summary /> };
 }
@@ -30,7 +29,7 @@ const FLOW = [
   { label: "미검토 이벤트 필터링", href: "/admin/events?st=new&sort=oldest" },
   { label: "상세에서 근거 확인·수정", href: `/admin/events/${sample.id}` },
   { label: "지도에서 반복 구간 보기", href: "/admin/map?zone=gn-2" },
-  { label: "자연어로 검색", href: "/admin/search" },
+  { label: "말하듯이 검색", href: "/admin/events?focus=1" },
 ];
 
 function DesktopGuide() {
@@ -81,7 +80,7 @@ export default function Dashboard({ route }: { route: HashRoute }) {
   return (
     <div className="min-h-dvh lg:flex lg:items-center lg:justify-center lg:gap-20 lg:bg-[#e9ebee] lg:p-6">
       <DesktopGuide />
-      <div className="app-frame relative mx-auto flex h-dvh w-full max-w-[430px] flex-col overflow-hidden bg-white lg:mx-0 lg:h-[min(880px,calc(100dvh-48px))] lg:w-[400px] lg:rounded-[44px] lg:border-[10px] lg:border-ink lg:shadow-[0_30px_80px_rgba(25,25,25,0.25)]">
+      <div onScroll={(e) => { e.currentTarget.scrollTop = 0; e.currentTarget.scrollLeft = 0; }} className="app-frame relative mx-auto flex h-dvh w-full max-w-[430px] flex-col overflow-hidden bg-white lg:mx-0 lg:h-[min(880px,calc(100dvh-48px))] lg:w-[400px] lg:rounded-[44px] lg:border-[10px] lg:border-ink lg:shadow-[0_30px_80px_rgba(25,25,25,0.25)]">
         <SheetRootContext.Provider value={sheetRoot}>
           <main ref={scroller} className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {node(route)}

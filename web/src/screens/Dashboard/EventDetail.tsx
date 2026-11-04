@@ -21,7 +21,7 @@ import type { EventField, FieldKey, Status } from "@/types/analytics";
 import { CAUSE_BY_ID, lowConfidence } from "@/lib/analytics";
 import { dateTimeText } from "@/lib/dates";
 import { copyText } from "@/lib/exporters";
-import { applyFilters, eventsHref, parseFilters, STATUS_LABEL } from "@/lib/filters";
+import { eventsHref, parseListParams, runList, STATUS_LABEL } from "@/lib/filters";
 import { navigate, type HashRoute } from "@/lib/useHashRoute";
 import { ZONE_BY_ID } from "@/lib/zones";
 import { OPERATORS } from "@/mockData/taxonomy";
@@ -95,7 +95,7 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
   }, [id, event?.note]);
 
   const scopeKey = JSON.stringify(scope);
-  const siblingIds = useMemo(() => applyFilters(scoped, parseFilters(new URLSearchParams(ctx))).map((e) => e.id), [ctx, scopeKey]);
+  const siblingIds = useMemo(() => runList(scoped, parseListParams(new URLSearchParams(ctx))).list.map((e) => e.id), [ctx, scopeKey]);
   const index = siblingIds.indexOf(id);
   const byId = (i: number) => (i >= 0 && i < siblingIds.length ? (all.find((e) => e.id === siblingIds[i]) ?? null) : null);
   const prev = index > 0 ? byId(index - 1) : null;
@@ -156,8 +156,9 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
       <PageHeader
         title="이벤트 상세"
         left={
-          <button type="button" onClick={back} aria-label="뒤로가기" className="flex size-11 shrink-0 items-center justify-center rounded-full bg-surface active:bg-line">
+          <button type="button" onClick={back} aria-label="목록으로 돌아가기" className="flex h-11 shrink-0 items-center gap-0.5 rounded-full bg-surface pr-4 pl-2.5 text-[14px] font-bold active:bg-line">
             <ChevronLeft className="size-5" aria-hidden="true" />
+            목록
           </button>
         }
         right={

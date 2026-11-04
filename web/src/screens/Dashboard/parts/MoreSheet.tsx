@@ -1,12 +1,20 @@
 import { useState, type ReactNode } from "react";
-import { Copy, Download, Link2, RotateCcw } from "lucide-react";
+import { ChartColumn, Copy, Download, LayoutDashboard, Link2, List, Map as MapIcon, RotateCcw } from "lucide-react";
 import { summarize } from "@/lib/analytics";
 import { copyText, downloadText, eventsToCsv, summaryText } from "@/lib/exporters";
 import { periodLabel } from "@/lib/scope";
+import { navigate } from "@/lib/useHashRoute";
 import { showToast } from "@/state/toast";
 import { useScopeData } from "@/state/useScopeData";
 import { resetUserData } from "@/state/userData";
 import Sheet from "./Sheet";
+
+const GUIDE = [
+  { Icon: LayoutDashboard, title: "요약", text: "이번 주 상황을 보고, 지금 해야 할 일을 확인해요", href: "/admin" },
+  { Icon: List, title: "이벤트", text: "기록을 찾고(검색·필터), 하나씩 열어 검토해요", href: "/admin/events" },
+  { Icon: ChartColumn, title: "분석", text: "언제·무엇이·어디서 늘었는지, 추천 조치를 봐요", href: "/admin/analysis" },
+  { Icon: MapIcon, title: "지도", text: "어느 구간에서 많이 생기는지 위치로 봐요", href: "/admin/map" },
+];
 
 function Row({ icon, title, hint, onClick, danger = false }: { icon: ReactNode; title: string; hint: string; onClick: () => void; danger?: boolean }) {
   return (
@@ -57,8 +65,23 @@ export default function MoreSheet({ open, onClose }: { open: boolean; onClose: (
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title="더보기">
+    <Sheet open={open} onClose={onClose} title="더보기 · 도움말">
       <div className="flex flex-col">
+        <p className="px-3 pt-1 pb-1 text-[13px] font-bold text-ink-sub">어디서 무엇을 하나요?</p>
+        {GUIDE.map((g) => (
+          <Row
+            key={g.href}
+            icon={<g.Icon className="size-5" aria-hidden="true" />}
+            title={g.title}
+            hint={g.text}
+            onClick={() => {
+              onClose();
+              navigate(g.href);
+            }}
+          />
+        ))}
+        <div className="my-2 border-t border-line" />
+        <p className="px-3 pt-1 pb-1 text-[13px] font-bold text-ink-sub">내보내기·공유</p>
         <Row icon={<Copy className="size-5" aria-hidden="true" />} title="요약 텍스트 복사" hint="메신저나 보고서에 바로 붙여넣기" onClick={copySummary} />
         <Row icon={<Download className="size-5" aria-hidden="true" />} title="CSV로 내보내기" hint={`지금 범위의 이벤트 ${events.length}건`} onClick={exportCsv} />
         <Row icon={<Link2 className="size-5" aria-hidden="true" />} title="현재 화면 링크 복사" hint="필터와 범위를 그대로 공유" onClick={copyLink} />

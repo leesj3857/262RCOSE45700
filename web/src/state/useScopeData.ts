@@ -4,7 +4,7 @@ import { inRange } from "@/lib/dates";
 import { baselineOf, resolveRange, type Scope } from "@/lib/scope";
 import { ZONE_BY_ID } from "@/lib/zones";
 import { ALL_EVENTS } from "@/mockData/events";
-import { applyOverlay, overlayStore, prefsStore } from "./userData";
+import { applyOverlay, overlayStore, scopeStore } from "./userData";
 
 export type ScopeData = {
   scope: Scope;
@@ -34,7 +34,7 @@ export function useAllEvents(): IssueEvent[] {
 
 export function useScopeData(): ScopeData {
   const all = useAllEvents();
-  const { scope } = prefsStore.use();
+  const { scope } = scopeStore.use();
   return useMemo(() => {
     const range = resolveRange(scope);
     const baselineRange = baselineOf(range);
