@@ -154,9 +154,10 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
   return (
     <>
       <PageHeader
+        compact
         title="이벤트 상세"
         left={
-          <button type="button" onClick={back} aria-label="목록으로 돌아가기" className="flex h-11 shrink-0 items-center gap-0.5 rounded-full bg-surface pr-4 pl-2.5 text-[14px] font-bold active:bg-line">
+          <button type="button" onClick={back} aria-label="목록으로 돌아가기" className="flex h-10 shrink-0 items-center gap-0.5 rounded-full bg-white pr-4 pl-2.5 shadow-card text-[14px] font-bold active:bg-line">
             <ChevronLeft className="size-5" aria-hidden="true" />
             목록
           </button>
@@ -214,7 +215,7 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
               <StatusChip status={event.status} />
             </span>
           </div>
-          <h2 className="mt-3 text-[22px] leading-snug font-extrabold tracking-tight">{event.title}</h2>
+          <h2 className="mt-3 text-[19px] leading-snug font-extrabold tracking-tight">{event.title}</h2>
           <dl className="mt-4 flex flex-col gap-1.5 text-[13px] text-white/75">
             <div className="num">{dateTimeText(event.occurredAt)}</div>
             <div className="flex items-center gap-1.5">

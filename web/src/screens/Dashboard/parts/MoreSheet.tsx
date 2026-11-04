@@ -1,10 +1,6 @@
 import { useState, type ReactNode } from "react";
-import { Copy, Download, Link2, RotateCcw } from "lucide-react";
-import { summarize } from "@/lib/analytics";
-import { copyText, downloadText, eventsToCsv, summaryText } from "@/lib/exporters";
-import { periodLabel } from "@/lib/scope";
+import { RotateCcw } from "lucide-react";
 import { showToast } from "@/state/toast";
-import { useScopeData } from "@/state/useScopeData";
 import { resetUserData } from "@/state/userData";
 import Sheet from "./Sheet";
 
@@ -27,27 +23,7 @@ function Row({ icon, title, hint, onClick, danger = false }: { icon: ReactNode; 
 }
 
 export default function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { scope, range, events, baseline } = useScopeData();
   const [confirming, setConfirming] = useState(false);
-
-  async function copySummary() {
-    const text = summaryText(summarize(events, baseline, range), range, periodLabel(scope));
-    const ok = await copyText(text);
-    showToast(ok ? "요약을 복사했어요" : "복사하지 못했어요");
-    onClose();
-  }
-
-  async function copyLink() {
-    const ok = await copyText(window.location.href);
-    showToast(ok ? "링크를 복사했어요" : "복사하지 못했어요");
-    onClose();
-  }
-
-  function exportCsv() {
-    downloadText(`주행이슈_${range.start}_${range.end}.csv`, eventsToCsv(events));
-    showToast(`${events.length}건을 CSV로 내보냈어요`);
-    onClose();
-  }
 
   function reset() {
     resetUserData();
@@ -59,9 +35,6 @@ export default function MoreSheet({ open, onClose }: { open: boolean; onClose: (
   return (
     <Sheet open={open} onClose={onClose} title="더보기">
       <div className="flex flex-col">
-                <Row icon={<Copy className="size-5" aria-hidden="true" />} title="요약 텍스트 복사" onClick={copySummary} />
-        <Row icon={<Download className="size-5" aria-hidden="true" />} title="CSV로 내보내기" hint={`현재 기간의 이벤트 ${events.length}건`} onClick={exportCsv} />
-        <Row icon={<Link2 className="size-5" aria-hidden="true" />} title="현재 화면 링크 복사" onClick={copyLink} />
         <div className="my-2 border-t border-line" />
         {confirming ? (
           <div className="rounded-[18px] bg-danger/5 p-4">
