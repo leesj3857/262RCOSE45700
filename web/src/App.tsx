@@ -3,6 +3,7 @@ import Standby from "@/screens/Standby/Standby";
 import Record from "@/screens/Record/Record";
 import Review from "@/screens/Review/Review";
 import Dashboard from "@/screens/Dashboard/Dashboard";
+import Demo from "@/screens/Demo/Demo";
 import { useHashRoute } from "@/lib/useHashRoute";
 import type { AudioClip } from "@/types/report";
 
@@ -40,6 +41,10 @@ export default function App() {
   function handleDeleteAndBack() {
     clearClips();
     setScreen("standby");
+  }
+
+  if (route.path.startsWith("/demo")) {
+    return <Demo />;
   }
 
   if (route.path.startsWith("/admin")) {

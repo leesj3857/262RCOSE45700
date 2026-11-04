@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactElement } from "react";
-import { ArrowRight, Mic } from "lucide-react";
+import { ArrowRight, Mic, Play } from "lucide-react";
 import type { HashRoute } from "@/lib/useHashRoute";
 import { EVENTS_THIS_WEEK } from "@/mockData/events";
 import Analysis from "./Analysis";
@@ -54,10 +54,14 @@ function DesktopGuide() {
           </li>
         ))}
       </ol>
-      <div className="flex flex-col gap-2">
-        <a href="#/" className="inline-flex h-12 items-center gap-2 self-start rounded-full bg-kakao px-5 text-[14px] font-extrabold">
+      <div className="flex flex-wrap gap-2">
+        <a href="#/demo" className="inline-flex h-12 items-center gap-2 rounded-full bg-ink px-5 text-[14px] font-extrabold text-white">
+          <Play className="size-4" aria-hidden="true" />
+          자동 시연 보기
+        </a>
+        <a href="#/" className="inline-flex h-12 items-center gap-2 rounded-full bg-kakao px-5 text-[14px] font-extrabold">
           <Mic className="size-4" aria-hidden="true" />
-          오퍼레이터 녹음 화면 보기
+          녹음 화면 보기
         </a>
       </div>
     </aside>
