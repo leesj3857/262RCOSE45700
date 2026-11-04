@@ -19,6 +19,17 @@
 
   --color-danger: #e53935;
   --color-warning: #e08a00;
+  --color-ok: #16a55c;
+
+  --color-navy: #1a2030;
+  --color-navy-soft: #262d40;
+  --color-map-land: #f1f2f4;
+  --color-map-road: #ffffff;
+  --color-map-arterial: #ffeb7a;
+  --color-map-water: #d8e6f3;
+  --color-map-park: #e2eedd;
+
+  --radius-panel: 28px;
 
   --font-sans: "Kakao Small Sans", "Pretendard Variable", Pretendard,
     -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo",
@@ -54,6 +65,18 @@
 
 html {
   -webkit-tap-highlight-color: transparent;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 body {

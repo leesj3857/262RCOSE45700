@@ -2,6 +2,8 @@ import { useState } from "react";
 import Standby from "@/screens/Standby/Standby";
 import Record from "@/screens/Record/Record";
 import Review from "@/screens/Review/Review";
+import Dashboard from "@/screens/Dashboard/Dashboard";
+import { useHashRoute } from "@/lib/useHashRoute";
 import type { AudioClip } from "@/types/report";
 
 type Screen = "standby" | "record" | "addRecord" | "review";
@@ -10,6 +12,7 @@ type Screen = "standby" | "record" | "addRecord" | "review";
 export default function App() {
   const [screen, setScreen] = useState<Screen>("standby");
   const [audioClips, setAudioClips] = useState<AudioClip[]>([]);
+  const route = useHashRoute();
 
   function clearClips() {
     audioClips.forEach((c) => URL.revokeObjectURL(c.url));
@@ -37,6 +40,10 @@ export default function App() {
   function handleDeleteAndBack() {
     clearClips();
     setScreen("standby");
+  }
+
+  if (route.path.startsWith("/admin")) {
+    return <Dashboard route={route} />;
   }
 
   if (screen === "record") {
