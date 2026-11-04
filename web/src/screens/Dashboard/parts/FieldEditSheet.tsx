@@ -70,7 +70,7 @@ export default function FieldEditSheet({ event, field, onClose }: Props) {
         </p>
       ) : (
         <p className="mt-1 rounded-[16px] bg-[#fff8ec] p-3 text-[13px] leading-relaxed text-ink-sub">
-          말하지 않은 항목이라 자동으로 채우지 않았어요. 원본 음성을 확인한 뒤 직접 입력해 주세요.
+          음성에 없는 항목이에요
         </p>
       )}
 

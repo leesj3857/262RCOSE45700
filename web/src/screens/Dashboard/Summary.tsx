@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrowRight, ChevronRight, CircleCheck, Ellipsis, Inbox, Mic, Sparkles } from "lucide-react";
-import { CAUSE_BY_ID, summarize, zoneCounts } from "@/lib/analytics";
+import { summarize, zoneCounts } from "@/lib/analytics";
 import { buildRecommendations } from "@/lib/recommendations";
 import { eventsHref } from "@/lib/filters";
 import { baselineName, periodLabel } from "@/lib/scope";
@@ -39,7 +39,7 @@ export default function Summary() {
       key: "severe",
       count: severePending,
       title: `사고 ${severePending}건 확인하기`,
-      hint: "접촉·충돌 이벤트가 아직 검토되지 않았어요",
+      hint: "접촉·충돌 이벤트",
       href: eventsHref({ sev: ["high"], st: ["new", "flagged"], sort: "severity" }),
       tone: "danger" as const,
     },
@@ -47,7 +47,7 @@ export default function Summary() {
       key: "new",
       count: summary.byStatus.new,
       title: `미검토 ${summary.byStatus.new}건 검토하기`,
-      hint: "오래된 기록부터 하나씩 열어 확인해요",
+      hint: "오래된 것부터",
       href: eventsHref({ st: ["new"], sort: "oldest" }),
       tone: "ink" as const,
     },
@@ -55,7 +55,7 @@ export default function Summary() {
       key: "check",
       count: summary.checkCount,
       title: `비어 있는 항목 ${summary.checkCount}건 채우기`,
-      hint: "근거 발화가 없어 비워 둔 항목이에요",
+      hint: "빈 항목이 있는 이벤트",
       href: eventsHref({ check: true, sort: "check" }),
       tone: "ink" as const,
     },
@@ -69,7 +69,6 @@ export default function Summary() {
     <>
       <PageHeader
         title="요약"
-        sub="한 주의 상황과 지금 할 일을 보여줘요"
         right={
           <div className="flex items-center gap-2">
             <a href="#/" aria-label="녹음 화면으로" className="flex h-11 items-center gap-1.5 rounded-full bg-surface px-3.5 text-[13px] font-bold text-ink-sub active:bg-line">
@@ -87,7 +86,7 @@ export default function Summary() {
 
       <div className="flex flex-col gap-7 px-5 pt-5 pb-10">
         {total === 0 ? (
-          <EmptyState icon={<Inbox className="size-6" aria-hidden="true" />} title="이 범위에는 기록이 없어요" description="위에서 기간을 늘리거나 다른 차량을 골라 보세요." />
+          <EmptyState icon={<Inbox className="size-6" aria-hidden="true" />} title="기록이 없어요" description="기간이나 차량을 바꿔 보세요" />
         ) : (
           <>
             <section aria-label="기간 요약" className="overflow-hidden rounded-panel bg-navy p-6 text-white">
@@ -135,7 +134,6 @@ export default function Summary() {
                   );
                 })}
               </ul>
-              <p className="mt-3 text-center text-[12px] text-white/60">막대를 누르면 그날(주)의 이벤트가 열려요</p>
             </section>
 
             <section aria-label="지금 할 일" className="flex flex-col gap-3">
@@ -187,7 +185,7 @@ export default function Summary() {
               </div>
               {recs.length === 0 ? (
                 <div className="flex items-center gap-3 rounded-[22px] bg-surface p-4 text-[14px] text-ink-sub">
-                  <Sparkles className="size-5 shrink-0" aria-hidden="true" />이 범위에서는 지금 바로 조치할 항목이 없어요.
+                  <Sparkles className="size-5 shrink-0" aria-hidden="true" />조치할 항목이 없어요
                 </div>
               ) : (
                 <RecCard rec={recs.find((r) => r.kind === "hotspot") ?? recs[0]} />
@@ -231,11 +229,6 @@ export default function Summary() {
                 더 자세히 분석하기
                 <ArrowRight className="size-4" aria-hidden="true" />
               </a>
-              {summary.patterns.length > 0 && (
-                <p className="px-1 text-center text-[12px] text-ink-muted">
-                  {CAUSE_BY_ID[summary.patterns[0].cause].label} 등 반복 구간 {summary.patterns.length}곳은 분석 탭에서 볼 수 있어요
-                </p>
-              )}
             </section>
           </>
         )}

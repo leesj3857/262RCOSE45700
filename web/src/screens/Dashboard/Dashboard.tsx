@@ -42,9 +42,6 @@ function DesktopGuide() {
           <br />
           분석 앱
         </p>
-        <p className="mt-3 text-[15px] leading-relaxed text-ink-sub">
-          오퍼레이터가 음성으로 남긴 기록을 모아 운영 관리자가 반복 패턴을 찾고 조치할 수 있게 돕는 화면 시안이에요.
-        </p>
       </div>
       <ol className="flex flex-col gap-1">
         {FLOW.map((f, i) => (
@@ -62,7 +59,6 @@ function DesktopGuide() {
           <Mic className="size-4" aria-hidden="true" />
           오퍼레이터 녹음 화면 보기
         </a>
-        <p className="text-[12px] leading-relaxed text-ink-sub">예시 데이터로 구성한 화면이에요. 검토 상태·메모·수정 내용은 이 브라우저에만 저장돼요.</p>
       </div>
     </aside>
   );

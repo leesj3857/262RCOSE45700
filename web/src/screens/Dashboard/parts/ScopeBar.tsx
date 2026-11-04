@@ -70,7 +70,6 @@ function ScopeSheet({ onClose }: { onClose: () => void }) {
         </div>
       }
     >
-      <p className="mb-4 text-[13px] leading-relaxed text-ink-muted">고른 기간은 요약, 이벤트, 분석, 지도에 똑같이 적용돼요.</p>
 
       <section aria-label="기간">
         <h3 className="mb-2 text-[13px] font-bold text-ink-sub">기간</h3>
@@ -101,7 +100,7 @@ function ScopeSheet({ onClose }: { onClose: () => void }) {
 
       {preview === 0 && (
         <p className="mt-5 flex items-start gap-2 rounded-[16px] bg-[#fff8ec] p-3.5 text-[13px] leading-relaxed text-ink-sub">
-          <CircleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />이 기간에는 기록된 이벤트가 없어요. 다른 기간을 골라 보세요. 칩 옆 숫자는 그 기간의 이벤트 수예요.
+          <CircleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />이 기간에는 이벤트가 없어요
         </p>
       )}
     </Sheet>

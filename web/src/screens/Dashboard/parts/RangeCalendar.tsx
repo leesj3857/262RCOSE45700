@@ -113,7 +113,7 @@ export default function RangeCalendar({ from, to, min, max, onChange }: Props) {
           );
         })}
       </div>
-      <p className="mt-2 px-1 text-center text-[12px] text-ink-muted">{anchor ? "이제 종료일을 눌러 주세요" : "시작일과 종료일을 차례로 눌러 주세요"} · 기록이 있는 {min.slice(5).replace("-", ".")} ~ {max.slice(5).replace("-", ".")}만 고를 수 있어요</p>
+      <p className="mt-2 px-1 text-center text-[12px] text-ink-muted">{anchor ? "종료일을 눌러 주세요" : "시작일을 눌러 주세요"}</p>
     </div>
   );
 }

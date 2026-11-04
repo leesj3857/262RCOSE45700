@@ -111,9 +111,8 @@ function ZonePicker({ selected, onToggle }: { selected: string[]; onToggle: (id:
             {q ? `${areaName(z.area)} ${z.name}` : z.name}
           </Chip>
         ))}
-        {shown.length === 0 && <p className="text-[13px] text-ink-muted">맞는 구간이 없어요. 다른 이름으로 찾아보세요.</p>}
+        {shown.length === 0 && <p className="text-[13px] text-ink-muted">맞는 구간이 없어요</p>}
       </div>
-      {!q && ZONES.length > shown.length && <p className="text-[12px] text-ink-muted">나머지 {ZONES.length - shown.length}곳은 검색해서 찾을 수 있어요.</p>}
     </div>
   );
 }
@@ -217,8 +216,8 @@ export default function FilterSheet({ onClose, filters, onApply, count }: Props)
           </div>
         </Fold>
         <Fold title="내가 표시한 것" active={(draft.check ? 1 : 0) + (draft.star ? 1 : 0)}>
-          <Switch label="확인 필요한 항목만" hint="비어 있는 필드가 있는 이벤트" on={draft.check} onChange={(check) => set({ check })} />
-          <Switch label="즐겨찾기만" hint="별표를 표시한 이벤트" on={draft.star} onChange={(star) => set({ star })} />
+          <Switch label="확인 필요한 항목만" hint="빈 항목이 있어요" on={draft.check} onChange={(check) => set({ check })} />
+          <Switch label="즐겨찾기만" hint="별표 표시한 이벤트" on={draft.star} onChange={(star) => set({ star })} />
         </Fold>
       </div>
     </Sheet>

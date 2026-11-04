@@ -30,7 +30,6 @@ export default function VehicleSwitch() {
         <ChevronDown className="size-4 text-white/70" aria-hidden="true" />
       </button>
       <Sheet open={open} onClose={() => setOpen(false)} title="차량 바꾸기">
-        <p className="mb-3 text-[13px] leading-relaxed text-ink-muted">고른 차량의 기록만 모든 화면에 보여줘요.</p>
         <ul className="flex flex-col gap-2.5">
           {VEHICLES.map((v) => {
             const on = v.id === current.id;

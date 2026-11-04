@@ -163,7 +163,6 @@ export default function EventList({ route }: { route: HashRoute }) {
     <>
       <PageHeader
         title="이벤트"
-        sub="기록을 찾고, 하나씩 확인해요"
         right={
           <button
             type="button"
@@ -221,7 +220,7 @@ export default function EventList({ route }: { route: HashRoute }) {
                   “{t}” 포함
                 </span>
               ))}
-              {search.facets.length === 0 && search.unmatched.length === 0 && <span className="text-[13px] text-ink-sub">조건으로 바꿀 수 있는 표현이 없어요</span>}
+              {search.facets.length === 0 && search.unmatched.length === 0 && <span className="text-[13px] text-ink-sub">인식한 조건이 없어요</span>}
             </div>
           </section>
         )}
@@ -301,8 +300,8 @@ export default function EventList({ route }: { route: HashRoute }) {
         {list.length === 0 && (
           <EmptyState
             icon={<FilterX className="size-6" aria-hidden="true" />}
-            title={filtered ? "조건에 맞는 이벤트가 없어요" : "이 범위에는 이벤트가 없어요"}
-            description={filtered ? "아래 방법 중 하나로 조건을 줄여 보세요." : "위에서 기간을 바꾸거나 다른 차량을 골라 보세요."}
+            title={filtered ? "조건에 맞는 이벤트가 없어요" : "이벤트가 없어요"}
+            description={filtered ? "조건을 줄여 보세요" : "기간이나 차량을 바꿔 보세요"}
             action={
               <div className="flex w-full min-w-[240px] flex-col gap-2">
                 {relax.map((r) => (

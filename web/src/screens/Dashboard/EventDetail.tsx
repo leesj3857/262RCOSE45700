@@ -251,7 +251,7 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
           </div>
         </section>
 
-        <Section icon={<AudioLines className="size-4" aria-hidden="true" />} title="원본 음성" note="예시 음성">
+        <Section icon={<AudioLines className="size-4" aria-hidden="true" />} title="원본 음성">
           <PlaybackBar event={event} />
         </Section>
 
@@ -259,7 +259,7 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
           <p className="text-[16px] leading-[1.75]">
             <Highlighted text={event.transcript} mark={selectedField?.evidence ?? null} />
           </p>
-          {selectedField?.evidence && <p className="mt-2 text-[12px] font-semibold text-ink-muted">‘{selectedField.label}’의 근거 발화를 표시하고 있어요</p>}
+          {selectedField?.evidence && <p className="mt-2 text-[12px] font-semibold text-ink-muted">‘{selectedField.label}’ 근거 표시 중</p>}
         </Section>
 
         <Section
@@ -319,7 +319,7 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
           {lowConfidence(event) && (
             <p className="mt-3 flex items-start gap-2 rounded-[14px] bg-[#fff8ec] p-3 text-[13px] leading-relaxed text-ink-sub">
               <CircleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
-              신뢰도가 낮은 항목이 있어요. 원본 음성을 들어보고 필요하면 수정해 주세요.
+              신뢰도가 낮은 항목이 있어요
             </p>
           )}
         </Section>
@@ -362,9 +362,6 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
                   <span className="num ml-auto font-bold">{(proc.verify / 1000).toFixed(2)}초</span>
                 </li>
               </ul>
-              <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
-                모든 항목은 근거 발화가 확인될 때만 채워요. 근거가 없으면 추측해서 채우지 않고 비워 둬요.
-              </p>
             </div>
           )}
         </section>
@@ -384,7 +381,6 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
           {logOpen && (
             <div className="px-5 pb-5">
               <VehicleLogChart event={event} />
-              <p className="mt-2 text-[12px] text-ink-muted">합성 로그 예시예요. 실제 차량 로그 연동은 이후 단계예요.</p>
             </div>
           )}
         </section>
@@ -411,14 +407,14 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
           />
         </Section>
 
-        <Section icon={<NotebookPen className="size-4" aria-hidden="true" />} title="메모" note="이 이벤트에만 보여요">
+        <Section icon={<NotebookPen className="size-4" aria-hidden="true" />} title="메모">
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             onBlur={saveNote}
             rows={3}
             maxLength={300}
-            placeholder="확인한 내용이나 후속 조치를 적어 두세요"
+            placeholder="메모를 입력하세요"
             className="w-full resize-none rounded-[16px] border border-line bg-white p-3.5 text-[15px] leading-relaxed outline-none placeholder:text-ink-muted focus:border-ink"
           />
           <p className="num mt-1.5 text-right text-[12px] text-ink-muted">{note.length}/300</p>

@@ -19,13 +19,13 @@ export type Recommendation = {
 };
 
 const ACTION_BY_CAUSE: Record<CauseId, string> = {
-  twoWheeler: "이륜차·킥보드 진입이 잦은 구간이에요. 서행 구간 지정과 접근 전 경고 안내를 검토해 보세요.",
-  pedestrian: "보행자 횡단이 잦은 구간이에요. 횡단 보행자 인지 구간으로 지정하고 감속 로직을 점검해 보세요.",
-  vehicle: "합류·끼어들기가 잦은 구간이에요. 차선 정책과 차간 거리 설정을 점검해 보세요.",
-  signal: "신호 전환 시 개입이 잦아요. 신호 주기와 진입 속도 프로파일을 점검해 보세요.",
-  obstacle: "공사·불법 주정차 영향이 커요. 해당 정보를 경로 계획에 반영해 보세요.",
-  weather: "노면 영향이 커요. 우천 시 제동 거리 가이드를 점검해 보세요.",
-  unknown: "원인이 확인되지 않은 이벤트예요. 원본 음성을 확인해 원인을 입력해 주세요.",
+  twoWheeler: "서행 구간 지정, 접근 전 경고 안내 검토",
+  pedestrian: "횡단 보행자 인지 구간 지정, 감속 로직 점검",
+  vehicle: "차선 정책, 차간 거리 설정 점검",
+  signal: "신호 주기, 진입 속도 프로파일 점검",
+  obstacle: "공사·불법 주정차 정보를 경로 계획에 반영",
+  weather: "우천 시 제동 거리 가이드 점검",
+  unknown: "원본 음성을 확인해 원인 입력",
 };
 
 const PRIORITY_RANK: Record<Priority, number> = { high: 3, mid: 2, low: 1 };
@@ -65,7 +65,7 @@ export function buildRecommendations(input: {
         title: rising ? `${zone.name} · ${CAUSE_BY_ID[cause].label} 증가 추세` : `${zone.name} · ${CAUSE_BY_ID[cause].label} 반복`,
         reason: rising
           ? `최근 ${recent.length}주 연속으로 늘고 있어요`
-          : `선택한 기간에 같은 장소·같은 원인으로 ${count}건 반복됐어요`,
+          : `같은 장소·원인으로 ${count}건 반복됐어요`,
         evidence: [`주별 ${recent.join(" → ")}건`, `이번 기간 ${count}건`, zone.address],
         action: ACTION_BY_CAUSE[cause],
         ctas: [
@@ -82,10 +82,10 @@ export function buildRecommendations(input: {
       id: "severity-pending",
       priority: "high",
       kind: "severity",
-      title: `접촉·충돌 ${severe.length}건이 조치를 기다리고 있어요`,
-      reason: "사고 이벤트는 다른 항목보다 먼저 원본 음성과 로그를 확인하는 것이 좋아요",
+      title: `접촉·충돌 ${severe.length}건 확인 필요`,
+      reason: "사고 이벤트는 가장 먼저 확인해야 해요",
       evidence: [`미검토·조치 필요 ${severe.length}건`, `전체 사고 이벤트 ${events.filter((e) => e.severity === "high").length}건`],
-      action: "상세 화면에서 음성·전사·차량 로그를 대조한 뒤 검토 상태를 바꿔 보세요.",
+      action: "음성·전사·차량 로그 대조 후 검토 상태 변경",
       ctas: [{ label: "바로 확인", href: eventsHref({ sev: ["high"], st: ["new", "flagged"], sort: "severity" }) }],
       weight: 100,
     });
@@ -99,9 +99,9 @@ export function buildRecommendations(input: {
       priority: "mid",
       kind: "time",
       title: `${win.from}–${win.from + 3}시에 이벤트가 몰려요`,
-      reason: `하루 중 3시간 동안 전체의 ${Math.round(win.share * 100)}%가 발생했어요`,
+      reason: `3시간 동안 전체의 ${Math.round(win.share * 100)}%가 발생했어요`,
       evidence: [`${win.count}건 / 전체 ${events.length}건`, "운행 시간 8–22시 기준"],
-      action: "해당 시간대의 오퍼레이터 배치와 속도 상한을 검토해 보세요.",
+      action: "해당 시간대 오퍼레이터 배치, 속도 상한 검토",
       ctas: [
         { label: "해당 시간대 보기", href: eventsHref({ hr: [win.from, win.from + 2] }) },
         { label: "시간대 분석", href: "/admin/analysis?s=time" },
@@ -118,9 +118,9 @@ export function buildRecommendations(input: {
       priority: "low",
       kind: "weather",
       title: "비 오는 날 이벤트 비율이 높아요",
-      reason: `운행 시간 중 우천 비중(12%) 대비 ${rainRatio.toFixed(1)}배예요`,
+      reason: `평소 비 오는 시간(12%)의 ${rainRatio.toFixed(1)}배예요`,
       evidence: [`비 오는 날 ${rain}건 (${Math.round((rain / events.length) * 100)}%)`, "운행 시간 중 우천 비중은 예시 값"],
-      action: "우천 시 운행 속도 가이드와 제동 거리 설정을 점검해 보세요.",
+      action: "우천 시 운행 속도 가이드, 제동 거리 설정 점검",
       ctas: [{ label: "비 오는 날 보기", href: eventsHref({ wx: ["비"] }) }],
       weight: Math.round(rainRatio * 10),
     });
@@ -136,7 +136,7 @@ export function buildRecommendations(input: {
       title: `검토하지 않은 이벤트가 ${unreviewed.length}건 있어요`,
       reason: `가장 오래된 이벤트는 ${oldest.occurredAt.slice(5, 10).replace("-", ".")}에 기록됐어요`,
       evidence: [`미검토 ${unreviewed.length}건`, `검토 완료 ${events.filter((e) => e.status === "reviewed").length}건`],
-      action: "오래된 순서로 하나씩 열어 검토 완료로 표시하면 반복 패턴 분석이 더 정확해져요.",
+      action: "오래된 것부터 검토 완료로 표시",
       ctas: [{ label: "오래된 순으로 검토", href: eventsHref({ st: ["new"], sort: "oldest" }) }],
       weight: unreviewed.length,
     });
@@ -149,9 +149,9 @@ export function buildRecommendations(input: {
       priority: "mid",
       kind: "check",
       title: `비어 있는 항목이 있는 이벤트 ${check.length}건`,
-      reason: "근거 발화가 없어 자동으로 채우지 않은 항목이에요",
+      reason: "음성에 없어 비워 둔 항목이에요",
       evidence: [`확인 필요 ${check.length}건`, `전체의 ${Math.round((check.length / events.length) * 100)}%`],
-      action: "원본 음성을 다시 듣고 직접 입력하면 분류 정확도가 올라가요.",
+      action: "원본 음성을 듣고 직접 입력",
       ctas: [{ label: "확인 필요한 것만 보기", href: eventsHref({ check: true, sort: "check" }) }],
       weight: check.length,
     });

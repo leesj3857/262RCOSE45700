@@ -73,7 +73,7 @@ export default function SearchBox({ value, onChange, autoFocus = false }: Props)
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholder={listening ? "듣고 있어요…" : "찾고 싶은 내용을 말하듯 적어 보세요"}
+          placeholder={listening ? "듣고 있어요…" : "이벤트 검색"}
           aria-label="이벤트 검색"
           enterKeyHint="search"
           className="ml-2 min-w-0 flex-1 bg-transparent text-[16px] outline-none placeholder:text-ink-muted"

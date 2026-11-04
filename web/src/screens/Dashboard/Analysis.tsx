@@ -13,7 +13,6 @@ import {
 import { buildRecommendations } from "@/lib/recommendations";
 import { weekdayLabel } from "@/lib/dates";
 import { eventsHref } from "@/lib/filters";
-import { baselineName, periodLabel } from "@/lib/scope";
 import { navigate, type HashRoute } from "@/lib/useHashRoute";
 import { ZONE_BY_ID } from "@/lib/zones";
 import { AREAS, CAUSES, EVENT_TYPES, HOUR_MAX, HOUR_MIN, TYPE_COLORS } from "@/mockData/taxonomy";
@@ -236,9 +235,9 @@ function Heatmap({ events }: { events: IssueEvent[] }) {
         </div>
       ) : (
         <p className="mt-4 rounded-[18px] bg-surface p-4 text-[13px] leading-relaxed text-ink-sub">
-          {events.length === 0 ? "이 범위에는 이벤트가 없어요." : (
+          {events.length === 0 ? "이벤트가 없어요" : (
             <>
-              가장 몰리는 시간대는 <b className="num">{win.from}–{win.from + 3}시</b>(전체의 {Math.round(win.share * 100)}%), 가장 많은 요일은 <b>{weekdayLabel(topDay)}요일</b>이에요. 칸을 누르면 자세히 볼 수 있어요.
+              가장 많은 시간 <b className="num">{win.from}–{win.from + 3}시</b> ({Math.round(win.share * 100)}%) · 가장 많은 요일 <b>{weekdayLabel(topDay)}요일</b>
             </>
           )}
         </p>
@@ -258,15 +257,8 @@ const TABS: { id: Tab; label: string }[] = [
 
 const ALIAS: Record<string, Tab> = { recs: "recs", trend: "trend", time: "trend", cause: "cause", patterns: "cause", quality: "quality", vehicle: "quality" };
 
-const SUBS: Record<Tab, string> = {
-  recs: "데이터에서 찾은 개선 포인트예요",
-  trend: "언제 늘고 줄었는지 살펴봐요",
-  cause: "원인이 무엇이고 어디서 생기는지 살펴봐요",
-  quality: "음성이 얼마나 정확히 정리됐는지 보여줘요",
-};
-
 export default function Analysis({ route }: { route: HashRoute }) {
-  const { scope, range, events, baseline, scopedAll } = useScopeData();
+  const { range, events, baseline, scopedAll } = useScopeData();
   const { dismissedRecs } = prefsStore.use();
   const [showHidden, setShowHidden] = useState(false);
   const [more, setMore] = useState(false);
@@ -281,7 +273,6 @@ export default function Analysis({ route }: { route: HashRoute }) {
   const byArea = (cause: string) => AREAS.map((a) => events.filter((e) => e.cause === cause && ZONE_BY_ID[e.zoneId].area === a.id).length);
   const weather = ["맑음", "흐림", "비", ""].map((w) => ({ label: w || "미기록", n: events.filter((e) => e.weather === w).length }));
   const rainRatio = total ? weather[2].n / total / 0.12 : 0;
-  const compareName = baselineName(scope);
   const maxCause = Math.max(1, ...CAUSES.map((c) => events.filter((e) => e.cause === c.id).length));
   const maxType = Math.max(1, ...summary.byType.map((t) => t.count));
   const fields = events.flatMap((e) => e.fields);
@@ -295,7 +286,6 @@ export default function Analysis({ route }: { route: HashRoute }) {
     <>
       <PageHeader
         title="분석"
-        sub={SUBS[tab]}
         right={
           <button type="button" onClick={() => setMore(true)} aria-label="더보기와 도움말" className="flex size-11 items-center justify-center rounded-full bg-surface active:bg-line">
             <Ellipsis className="size-5" aria-hidden="true" />
@@ -309,11 +299,11 @@ export default function Analysis({ route }: { route: HashRoute }) {
         <Segmented label="분석 종류" value={tab} onChange={setTab} options={TABS} />
 
         {tab === "recs" && (
-          <Block id="recs" title="추천 조치" note={recs.length ? `${periodLabel(scope)} 데이터에서 찾은 ${recs.length}건이에요. 급한 순서로 보여줘요.` : undefined}>
+          <Block id="recs" title="추천 조치">
             {recs.length === 0 ? (
               <div className="flex items-center gap-3 rounded-[22px] bg-surface p-4 text-[14px] text-ink-sub">
                 <Lightbulb className="size-5 shrink-0" aria-hidden="true" />
-                {total === 0 ? "이 범위에는 이벤트가 없어요." : "지금 바로 조치할 항목이 없어요. 기간을 넓혀 보면 더 많은 패턴이 보여요."}
+                {total === 0 ? "이 범위에는 이벤트가 없어요." : "조치할 항목이 없어요"}
               </div>
             ) : (
               recs.map((r) => <RecCard key={r.id} rec={r} detailed />)
@@ -339,10 +329,10 @@ export default function Analysis({ route }: { route: HashRoute }) {
 
         {tab === "trend" && (
           <>
-            <Block id="trend" title="주간 추이" note="최근 8주의 흐름이에요. 막대를 눌러 주별 변화를 보세요. 보기 범위 밖의 주는 연하게 보여요.">
+            <Block id="trend" title="주간 추이">
               <TrendChart events={scopedAll} rangeStart={range.start} rangeEnd={range.end} />
             </Block>
-            <Block id="time" title="요일·시간대" note="언제 이벤트가 몰리는지 보여줘요 (운행 시간 8–22시)">
+            <Block id="time" title="요일·시간대">
               <Heatmap events={events} />
             </Block>
           </>
@@ -350,9 +340,9 @@ export default function Analysis({ route }: { route: HashRoute }) {
 
         {tab === "cause" && (
           <>
-            <Block id="patterns" title="반복 구간" note="같은 장소·같은 원인으로 반복된 곳이에요. 최근 8주 추이도 함께 봐요.">
+            <Block id="patterns" title="반복 구간">
               {summary.patterns.length === 0 ? (
-                <p className="rounded-[22px] bg-surface p-4 text-[14px] text-ink-sub">이 범위에서는 반복된 패턴이 없어요.</p>
+                <p className="rounded-[22px] bg-surface p-4 text-[14px] text-ink-sub">반복된 패턴이 없어요</p>
               ) : (
                 <ul className="flex flex-col gap-2.5">
                   {summary.patterns.map((p) => {
@@ -390,7 +380,7 @@ export default function Analysis({ route }: { route: HashRoute }) {
               )}
             </Block>
 
-            <Block id="cause" title="원인별" note={compareName ? `${compareName} 대비 변화와 지역별 비중이에요` : "지역별 비중이에요"}>
+            <Block id="cause" title="원인별">
               <div className="rounded-panel border border-line bg-white p-5">
                 <div className="mb-3 flex items-center gap-3 text-[12px] font-semibold text-ink-sub">
                   <span className="inline-flex items-center gap-1.5">
@@ -496,7 +486,7 @@ export default function Analysis({ route }: { route: HashRoute }) {
                 </ul>
                 {rainRatio >= 1.2 && (
                   <p className="mt-3 rounded-[14px] bg-kakao-soft p-3 text-[13px] leading-relaxed">
-                    비 오는 날 이벤트 비중이 운행 시간 중 비 비중(12%, 예시 값)의 <b className="num">{rainRatio.toFixed(1)}배</b>예요.
+                    비 오는 날 비중이 평소(12%)의 <b className="num">{rainRatio.toFixed(1)}배</b>예요
                   </p>
                 )}
               </div>
@@ -506,7 +496,7 @@ export default function Analysis({ route }: { route: HashRoute }) {
 
         {tab === "quality" && (
           <>
-            <Block id="quality" title="자동 정리 품질" note="근거 발화가 없는 항목은 추측해서 채우지 않고 비워 두기 때문에 자동 채움 비율이 100%가 되지 않아요.">
+            <Block id="quality" title="자동 정리 품질">
               <div className="grid grid-cols-3 gap-2 text-center">
                 {[
                   { v: `${autoRate}%`, l: "항목 자동 채움" },

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Hand, MapPinOff, Repeat, SlidersHorizontal } from "lucide-react";
+import { ArrowRight, MapPinOff, Repeat, SlidersHorizontal } from "lucide-react";
 import type { AreaId, CauseId } from "@/types/analytics";
 import { CAUSE_BY_ID, pctChange, zoneCauseSeries, zoneCounts } from "@/lib/analytics";
 import { daysIn } from "@/lib/dates";
@@ -93,7 +93,7 @@ export default function MapView({ route }: { route: HashRoute }) {
 
   return (
     <>
-      <PageHeader title="지도" sub="어느 곳에서 많이 생기는지 위치로 봐요" />
+      <PageHeader title="지도" />
       <ScopeBar />
 
       <div className="flex flex-col gap-3 px-5 pt-4 pb-10">
@@ -131,16 +131,12 @@ export default function MapView({ route }: { route: HashRoute }) {
           repeatThreshold={threshold}
         />
 
-        <p className="flex items-center justify-center gap-1.5 text-center text-[12px] text-ink-muted">
-          <Hand className="size-3.5" aria-hidden="true" />
-          {mode === "events" ? "확대해서 점을 누르면 이벤트를 볼 수 있어요" : mode === "heat" ? "붉을수록 이벤트가 몰린 곳이에요" : `원이 클수록 많이 발생 · 점선 = 반복 구간(${threshold}건 이상)`}
-        </p>
 
         {areaTotal === 0 && (
           <EmptyState
             icon={<MapPinOff className="size-6" aria-hidden="true" />}
-            title="이 지역에는 표시할 이벤트가 없어요"
-            description="다른 지역을 고르거나 원인 조건과 보기 기간을 바꿔 보세요."
+            title="이 지역에는 이벤트가 없어요"
+            description="지역이나 조건을 바꿔 보세요"
           />
         )}
 
@@ -210,7 +206,7 @@ export default function MapView({ route }: { route: HashRoute }) {
             {pickedEvent ? (
               <EventRow event={pickedEvent} showDate />
             ) : (
-              <p className="rounded-[20px] bg-surface px-4 py-6 text-center text-[14px] text-ink-sub">지도에서 점을 눌러 이벤트를 확인해 보세요.</p>
+              <p className="rounded-[20px] bg-surface px-4 py-6 text-center text-[14px] text-ink-sub">점을 누르면 이벤트가 보여요</p>
             )}
             <p className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[12px] text-ink-muted">
               <span className="inline-flex items-center gap-1.5">
