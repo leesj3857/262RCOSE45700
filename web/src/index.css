@@ -16,7 +16,10 @@
   --color-ink-muted: #667085;
   --color-line: #e8eaed;
   --color-surface: #f5f6f8;
-  --color-page: #f2f3f6;
+  --color-page: #f5f6f8;
+  --color-blue: #3478f6;
+  --color-blue-soft: #e8f0fe;
+  --color-blue-ink: #1f5fd6;
 
   --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.05);
   --shadow-float: 0 2px 6px rgba(16, 24, 40, 0.06), 0 14px 36px rgba(16, 24, 40, 0.14);
@@ -25,8 +28,8 @@
   --color-warning: #e08a00;
   --color-ok: #16a55c;
 
-  --color-navy: #1a2030;
-  --color-navy-soft: #262d40;
+  --color-navy: #1b1d24;
+  --color-navy-soft: #2a2d36;
   --color-map-land: #f1f2f4;
   --color-map-road: #ffffff;
   --color-map-arterial: #ffeb7a;
@@ -145,7 +148,7 @@ body {
 }
 
 :focus-visible {
-  outline: 3px solid #191919;
+  outline: 3px solid #3478f6;
   outline-offset: 2px;
   border-radius: 8px;
 }
@@ -155,7 +158,7 @@ a:focus-visible,
 [role="button"]:focus-visible,
 [role="radio"]:focus-visible,
 [role="slider"]:focus-visible {
-  outline: 3px solid #191919;
+  outline: 3px solid #3478f6;
   outline-offset: 2px;
 }
 

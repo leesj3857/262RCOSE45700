@@ -3,8 +3,8 @@ import { TYPE_BY_ID } from "@/lib/analytics";
 
 const TONE: Record<EventTypeId, string> = {
   hardBrake: "bg-kakao-soft text-ink",
-  hardAccel: "bg-[#e8f1fb] text-[#1f5d99]",
-  hardSteer: "bg-[#efeafc] text-[#5a3fb0]",
+  hardAccel: "bg-blue-soft text-blue-ink",
+  hardSteer: "bg-[#eef0f3] text-ink-sub",
   contact: "bg-[#fdeceb] text-danger",
   collision: "bg-danger text-white",
   other: "bg-surface text-ink-sub",

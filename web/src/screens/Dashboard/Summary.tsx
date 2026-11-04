@@ -132,7 +132,7 @@ export default function Summary() {
                     <a href={`#${eventsHref({ type: [t.id] })}`} className="flex items-center gap-3 rounded-[20px] px-4 py-3 active:bg-surface">
                       <span className="w-[76px] shrink-0 text-[15px] font-bold">{t.label}</span>
                       <span className="h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-surface">
-                        <span className="block h-full rounded-full bg-navy" style={{ width: `${(t.count / typeMax) * 100}%` }} />
+                        <span className="block h-full rounded-full bg-blue" style={{ width: `${(t.count / typeMax) * 100}%` }} />
                       </span>
                       <span className="num w-12 shrink-0 text-right text-[15px] font-extrabold">{t.count}건</span>
                     </a>

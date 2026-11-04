@@ -146,9 +146,9 @@ export const HOUR_WINDOWS: { id: string; label: string; from: number; to: number
 
 export const TYPE_COLORS: Record<EventTypeId, string> = {
   hardBrake: "#fee500",
-  hardAccel: "#1a2030",
-  hardSteer: "#7c8aa5",
+  hardAccel: "#3478f6",
+  hardSteer: "#7e8593",
   contact: "#f08c00",
-  collision: "#e03131",
-  other: "#cfd3da",
+  collision: "#e53935",
+  other: "#d6d9dd",
 };

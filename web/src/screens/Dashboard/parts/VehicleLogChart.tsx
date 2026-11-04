@@ -65,8 +65,8 @@ export default function VehicleLogChart({ event }: { event: IssueEvent }) {
           </g>
         ))}
 
-        <line x1={x(0)} x2={x(0)} y1={PAD.t - 6} y2={H - PAD.b} stroke="#1a2030" strokeWidth={1.5} />
-        <text x={x(0) + 4} y={PAD.t - 9} fontSize="10" fontWeight={700} fill="#1a2030">
+        <line x1={x(0)} x2={x(0)} y1={PAD.t - 6} y2={H - PAD.b} stroke="#191919" strokeWidth={1.5} />
+        <text x={x(0) + 4} y={PAD.t - 9} fontSize="10" fontWeight={700} fill="#191919">
           사건
         </text>
         <line x1={speechX} x2={speechX} y1={PAD.t - 6} y2={H - PAD.b} stroke="#e0b400" strokeWidth={1.5} strokeDasharray="4 3" />

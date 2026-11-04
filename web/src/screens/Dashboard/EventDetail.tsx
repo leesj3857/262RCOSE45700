@@ -279,7 +279,7 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
                     disabled={empty && !f.evidence}
                     aria-pressed={active}
                     className={`flex w-full items-center gap-3 rounded-[18px] border py-3 pr-14 pl-4 text-left transition-colors ${
-                      active ? "border-kakao bg-kakao-soft" : empty ? "border-dashed border-warning/60 bg-[#fff8ec]" : "border-line bg-white active:bg-surface"
+                      active ? "border-kakao bg-kakao-soft" : empty ? "border-dashed border-warning/60 bg-[#fff6e0]" : "border-line bg-white active:bg-surface"
                     }`}
                   >
                     <span className="w-10 shrink-0 text-[13px] font-semibold text-ink-muted">{f.label}</span>
@@ -317,7 +317,7 @@ export default function EventDetail({ id, route }: { id: string; route: HashRout
             })}
           </ul>
           {lowConfidence(event) && (
-            <p className="mt-3 flex items-start gap-2 rounded-[14px] bg-[#fff8ec] p-3 text-[13px] leading-relaxed text-ink-sub">
+            <p className="mt-3 flex items-start gap-2 rounded-[14px] bg-[#fff6e0] p-3 text-[13px] leading-relaxed text-ink-sub">
               <CircleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
               신뢰도가 낮은 항목이 있어요
             </p>

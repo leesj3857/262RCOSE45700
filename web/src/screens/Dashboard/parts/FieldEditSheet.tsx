@@ -69,7 +69,7 @@ export default function FieldEditSheet({ event, field, onClose }: Props) {
           </span>
         </p>
       ) : (
-        <p className="mt-1 rounded-[16px] bg-[#fff8ec] p-3 text-[13px] leading-relaxed text-ink-sub">
+        <p className="mt-1 rounded-[16px] bg-[#fff6e0] p-3 text-[13px] leading-relaxed text-ink-sub">
           음성에 없는 항목이에요
         </p>
       )}

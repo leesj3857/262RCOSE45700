@@ -253,7 +253,7 @@ export default function ZoneMap({
                   className="cursor-pointer outline-none"
                 >
                   <circle cx={sx(z.x + j.dx)} cy={sy(z.y + j.dy)} r={14} fill="transparent" />
-                  {active && <circle cx={sx(z.x + j.dx)} cy={sy(z.y + j.dy)} r={11} fill="none" stroke="#1a2030" strokeWidth={2} />}
+                  {active && <circle cx={sx(z.x + j.dx)} cy={sy(z.y + j.dy)} r={11} fill="none" stroke="#191919" strokeWidth={2} />}
                   <circle
                     cx={sx(z.x + j.dx)}
                     cy={sy(z.y + j.dy)}
@@ -292,7 +292,7 @@ export default function ZoneMap({
               )}
               {mode === "events" ? (
                 <>
-                  <circle cx={cx} cy={cy} r={34 * k} fill={active ? "rgba(26,32,48,0.06)" : "transparent"} stroke={active ? "#1a2030" : "rgba(25,25,25,0.12)"} strokeDasharray="3 4" strokeWidth={1.2} />
+                  <circle cx={cx} cy={cy} r={34 * k} fill={active ? "rgba(25,25,25,0.06)" : "transparent"} stroke={active ? "#191919" : "rgba(25,25,25,0.12)"} strokeDasharray="3 4" strokeWidth={1.2} />
                 </>
               ) : (
                 <circle

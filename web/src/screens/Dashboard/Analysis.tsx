@@ -98,7 +98,7 @@ function TrendChart({ events, rangeStart, rangeEnd }: { events: IssueEvent[]; ra
             >
               <rect x={pad.l + i * bw} y={pad.t - 14} width={bw} height={H - pad.t - pad.b + 14} fill={picked === i ? "#fff9c4" : "transparent"} rx={8} />
               {stack === "total" ? (
-                <rect x={x} y={y(s.total)} width={w} height={y(0) - y(s.total)} rx={5} fill={inRange ? "#1a2030" : "#c9ced6"} />
+                <rect x={x} y={y(s.total)} width={w} height={y(0) - y(s.total)} rx={5} fill={inRange ? "#3478f6" : "#d6d9dd"} />
               ) : (
                 types.map((t) => {
                   const v = s.byType[t.id];
@@ -378,7 +378,7 @@ export default function Analysis({ route }: { route: HashRoute }) {
                     {AREAS[0].label}
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="size-2.5 rounded-sm bg-navy" aria-hidden="true" />
+                    <span className="size-2.5 rounded-sm bg-blue" aria-hidden="true" />
                     {AREAS[1].label}
                   </span>
                 </div>
@@ -399,7 +399,7 @@ export default function Analysis({ route }: { route: HashRoute }) {
                           </span>
                           <span className="flex h-2.5 overflow-hidden rounded-full bg-surface" style={{ width: `${Math.max(4, (n / maxCause) * 100)}%` }}>
                             <span className="bg-kakao" style={{ width: `${n ? (gn / n) * 100 : 0}%` }} />
-                            <span className="bg-navy" style={{ width: `${n ? (sb / n) * 100 : 0}%` }} />
+                            <span className="bg-blue" style={{ width: `${n ? (sb / n) * 100 : 0}%` }} />
                           </span>
                         </a>
                       </li>
@@ -465,7 +465,7 @@ export default function Analysis({ route }: { route: HashRoute }) {
                       <a href={`#${eventsHref({ wx: [w.label] })}`} className="flex items-center gap-3 active:opacity-70">
                         <span className="w-12 shrink-0 text-[14px] font-semibold text-ink-sub">{w.label}</span>
                         <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface">
-                          <span className={`block h-full rounded-full ${w.label === "비" ? "bg-navy" : "bg-kakao"}`} style={{ width: `${total ? (w.n / total) * 100 : 0}%` }} />
+                          <span className={`block h-full rounded-full ${w.label === "비" ? "bg-blue" : "bg-kakao"}`} style={{ width: `${total ? (w.n / total) * 100 : 0}%` }} />
                         </span>
                         <span className="num w-[72px] shrink-0 text-right text-[14px] font-extrabold">
                           {w.n}건 <span className="text-[11px] font-semibold text-ink-muted">{total ? Math.round((w.n / total) * 100) : 0}%</span>

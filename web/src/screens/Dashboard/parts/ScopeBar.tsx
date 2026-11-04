@@ -100,7 +100,7 @@ function ScopeSheet({ onClose }: { onClose: () => void }) {
       </section>
 
       {preview === 0 && (
-        <p className="mt-5 flex items-start gap-2 rounded-[16px] bg-[#fff8ec] p-3.5 text-[13px] leading-relaxed text-ink-sub">
+        <p className="mt-5 flex items-start gap-2 rounded-[16px] bg-[#fff6e0] p-3.5 text-[13px] leading-relaxed text-ink-sub">
           <CircleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />이 기간에는 이벤트가 없어요
         </p>
       )}
