@@ -17,6 +17,7 @@ const FIELD_LABELS: Record<string, string> = {
 type Props = {
   audioClips: AudioClip[];
   onAdd: () => void;
+  onSave: () => void;
   onBack: () => void;
 };
 
@@ -54,7 +55,7 @@ function MockBadge() {
   );
 }
 
-export default function Review({ audioClips, onAdd, onBack }: Props) {
+export default function Review({ audioClips, onAdd, onBack, onSave }: Props) {
   const [review] = useState<ReviewData>(mockReview);
 
   const fields = Object.entries(review.fields);
@@ -114,14 +115,20 @@ export default function Review({ audioClips, onAdd, onBack }: Props) {
       </div>
 
       {/* 4. 추가 녹음, 삭제 버튼 */}
-      <section className="flex shrink-0 gap-2 border-t border-line bg-white px-5 pt-3 pb-[max(32px,env(safe-area-inset-bottom))]">
-        <Button variant="secondary" onClick={onBack} className="flex-1 px-2 text-[15px] whitespace-nowrap text-danger">
-          삭제하고 돌아가기
+      <section className="flex flex-col shrink-0 gap-2 border-t border-line bg-white px-5 pt-3 pb-[max(32px,env(safe-area-inset-bottom))]">
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={onBack} className="flex-1 px-2 text-[15px] whitespace-nowrap text-danger">
+            삭제하고 돌아가기
+          </Button>
+          <Button onClick={onAdd} className="flex-1 whitespace-nowrap">
+            <Plus className="size-5" strokeWidth={2.6} aria-hidden="true" />
+            추가 녹음
+          </Button>
+        </div>
+        <Button onClick={onSave} className="h-14 w-full text-[17px]">
+          저장
         </Button>
-        <Button onClick={onAdd} className="flex-1 whitespace-nowrap">
-          <Plus className="size-5" strokeWidth={2.6} aria-hidden="true" />
-          추가 녹음
-        </Button>
+
       </section>
     </main>
   );

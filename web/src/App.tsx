@@ -34,6 +34,11 @@ export default function App() {
     setScreen("review");
   }
 
+  function handleSave() {
+    //현재 녹음본 저장 후 대기 화면으로 돌아가기
+    setScreen("standby");
+  }
+
   function handleDeleteAndBack() {
     clearClips();
     setScreen("standby");
@@ -53,6 +58,7 @@ export default function App() {
         audioClips={audioClips}
         onBack={handleDeleteAndBack}
         onAdd={() => setScreen("addRecord")}
+        onSave={handleSave}
       />
     );
   }
