@@ -1,0 +1,6 @@
+{
+  "tune": ["sample_tune"],
+  "test": ["sample_test"],
+  "demo": ["sample01"],
+  "note": "비율은 임의 값이다. 확보량에 맞춰 조정한다. test 는 평가 스크립트만 읽는다."
+}

@@ -1,0 +1,146 @@
+# 임시안(약 8종). 1주차 멘토링 후 확정.
+version: v1
+event_types:
+  - key: sudden_brake
+    label: 급제동
+    description: 선행 상황이나 장애물 때문에 차량이 갑자기 강하게 감속한 사건
+    keywords: ["급제동", "급브레이크"]
+  - key: cut_in
+    label: 끼어들기
+    description: 다른 차량이 짧은 간격으로 앞으로 끼어든 사건
+    keywords: ["컷인", "끼어들"]
+  - key: two_wheeler_intrusion
+    label: 이륜차 돌출
+    description: 오토바이, 자전거 등 이륜차가 차선 안으로 갑자기 들어온 사건
+    keywords: ["이륜차", "오토바이", "자전거", "킥보드"]
+  - key: illegal_parking_avoidance
+    label: 불법주정차 회피
+    description: 불법 주정차 차량을 피하려고 경로를 바꾼 사건
+    keywords: ["불법주정차", "이중주차"]
+  - key: pedestrian_intrusion
+    label: 보행자 돌출
+    description: 보행자가 차도나 경로 안으로 들어온 사건
+    keywords: ["보행자", "횡단"]
+  - key: construction_zone
+    label: 공사구간
+    description: 공사 구간이나 라바콘, 차선 통제를 지나거나 피한 사건
+    keywords: ["공사구간", "라바콘", "차선통제"]
+  - key: signal_issue
+    label: 신호 문제
+    description: 신호등 인지, 신호 위반, 신호 불명확과 관련된 사건
+    keywords: ["신호등", "신호위반", "빨간불"]
+  - key: other
+    label: 기타
+    description: 위 유형에 해당하지 않는 기타 주행 이슈
+    keywords: []
+
+# 단계 수는 설정값과 맞춘다. 기본 3단계(low|medium|high). tune 데이터로 보정 후 확정.
+severity:
+  levels:
+    - key: low
+      label: 낮음
+      description: 주행에 거의 영향이 없는 경미한 이슈
+      keywords: ["경미"]
+    - key: medium
+      label: 중간
+      description: 주의가 필요하지만 즉시 위험은 아닌 이슈
+      keywords: ["주의"]
+    - key: high
+      label: 높음
+      description: 급정거, 충돌 위험 등 즉시 대응이 필요한 이슈
+      keywords: ["급제동", "충돌"]
+
+# 오퍼레이터 발화에서 고르는 닫힌 보기. 임시안. 1주차 멘토링 후 확정.
+guide:
+  road_type:
+    label: 장소 또는 도로 유형
+    prompt: 이슈가 난 곳의 도로 모양을 고르세요.
+    options:
+      - key: intersection
+        label: 교차로
+        description: 교차로 안에서 난 이슈
+        keywords: ["교차로"]
+      - key: curve
+        label: 곡선로
+        description: 곡선 구간에서 난 이슈
+        keywords: ["곡선로", "곡선"]
+      - key: merge
+        label: 합류로
+        description: 합류 구간에서 난 이슈
+        keywords: ["합류로", "합류"]
+      - key: straight
+        label: 직선로
+        description: 직선 구간에서 난 이슈
+        keywords: ["직선로", "직선"]
+      - key: crosswalk
+        label: 횡단보도
+        description: 횡단보도 주변에서 난 이슈
+        keywords: ["횡단보도"]
+  ego_action_before:
+    label: 이슈 직전 내 차 동작
+    prompt: 이슈 직전에 내 차가 하던 동작을 고르세요.
+    options:
+      - key: going_straight
+        label: 직진
+        description: 이슈 직전에 직진하고 있었다
+        keywords: ["직진"]
+      - key: lane_change
+        label: 차선 변경
+        description: 이슈 직전에 차선을 바꾸고 있었다
+        keywords: ["차선 변경", "차선변경"]
+      - key: left_turn
+        label: 좌회전
+        description: 이슈 직전에 좌회전하고 있었다
+        keywords: ["좌회전"]
+      - key: right_turn
+        label: 우회전
+        description: 이슈 직전에 우회전하고 있었다
+        keywords: ["우회전"]
+      - key: stopped
+        label: 정차 중
+        description: 이슈 직전에 정차해 있었다
+        keywords: ["정차 중"]
+  target_type:
+    label: 대상 유형
+    prompt: 이슈의 대상 유형을 고르세요.
+    options:
+      - key: vehicle
+        label: 차량
+        description: 다른 차량이 대상이다
+        keywords: ["차량", "검은 차", "승용차"]
+      - key: pedestrian
+        label: 보행자
+        description: 보행자가 대상이다
+        keywords: ["보행자"]
+      - key: two_wheeler
+        label: 이륜차
+        description: 이륜차가 대상이다
+        keywords: ["이륜차", "오토바이", "자전거", "킥보드"]
+      - key: none
+        label: 없음
+        description: 특정 대상이 없다
+        keywords: []
+      - key: unknown
+        label: 미확인
+        description: 대상을 확인하지 못했다
+        keywords: ["미확인"]
+  ego_reaction:
+    label: 이슈 이후 내 차 반응
+    prompt: 이슈 이후 내 차가 보인 반응을 고르세요.
+    options:
+      - key: hard_decel
+        label: 급감속
+        description: 이슈 이후 갑자기 속도가 줄었다
+        keywords: ["급감속", "급제동"]
+      - key: hard_accel
+        label: 급가속
+        description: 이슈 이후 갑자기 속도가 늘었다
+        keywords: ["급가속"]
+      - key: oversteer
+        label: 과조향
+        description: 이슈 이후 조향이 과했다
+        keywords: ["과조향"]
+      - key: stop
+        label: 정차
+        description: 이슈 이후 차가 멈췄다
+        keywords: ["정차했다", "정지했다"]

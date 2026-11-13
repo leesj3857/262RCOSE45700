@@ -1,0 +1,49 @@
+[project]
+name = "issue-reporting-backend"
+version = "0.1.0"
+description = "오퍼레이터 음성 기반 주행 이슈 리포팅 백엔드"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "alembic>=1.14",
+    "fastapi>=0.115",
+    "psycopg[binary]>=3.2",
+    "pwdlib[argon2]>=0.2.1",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "pyjwt>=2.10",
+    "python-multipart>=0.0.12",
+    "pyyaml>=6.0",
+    "sqlalchemy>=2.0.36",
+    "uvicorn[standard]>=0.32",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27",
+    "pytest>=8.3",
+    "ruff>=0.8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+src = ["app", "tests", "scripts", "eval"]
+extend-exclude = ["alembic/script.py.mako"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"alembic/versions/*.py" = ["E501"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]

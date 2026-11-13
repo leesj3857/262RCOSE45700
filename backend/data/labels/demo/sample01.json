@@ -1,0 +1,14 @@
+{
+  "id": "sample01",
+  "condition": "quiet",
+  "reference_text": "강남대로에서 검은 차가 컷인해서 급제동했다. 라바콘이 쓰러져 있었다.",
+  "cause": "컷인",
+  "location": "강남대로",
+  "mentioned_time": null,
+  "event_type": "cut_in",
+  "severity": "high",
+  "road_type": null,
+  "ego_action_before": null,
+  "target_type": "vehicle",
+  "ego_reaction": "hard_decel"
+}

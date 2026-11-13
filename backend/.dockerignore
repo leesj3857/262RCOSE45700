@@ -1,0 +1,13 @@
+.venv
+__pycache__
+.pytest_cache
+.ruff_cache
+*.egg-info
+storage
+.env
+data/audio/**
+!data/audio/**/.gitkeep
+HANDOFF.local.md
+tests
+eval
+.git
