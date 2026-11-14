@@ -1,0 +1,14 @@
+{
+  "id": "sample_tune",
+  "condition": "cabin",
+  "reference_text": "교차로에서 이륜차가 끼어들어 주의가 필요했다.",
+  "cause": "끼어들기",
+  "location": "교차로",
+  "mentioned_time": null,
+  "event_type": "two_wheeler_intrusion",
+  "severity": "medium",
+  "road_type": "intersection",
+  "ego_action_before": null,
+  "target_type": "two_wheeler",
+  "ego_reaction": null
+}

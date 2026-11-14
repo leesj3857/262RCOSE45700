@@ -1,0 +1,14 @@
+{
+  "id": "sample_test",
+  "condition": "rain",
+  "reference_text": "평가 전용 문장이다. 보행자가 횡단했다.",
+  "cause": "보행자 돌출",
+  "location": null,
+  "mentioned_time": null,
+  "event_type": "pedestrian_intrusion",
+  "severity": "high",
+  "road_type": null,
+  "ego_action_before": null,
+  "target_type": "pedestrian",
+  "ego_reaction": null
+}
