@@ -1,5 +1,7 @@
 .env
 HANDOFF.local.md
+DEPLOY.local.md
+deploy.local.sh
 .venv/
 .DS_Store
 __pycache__/
